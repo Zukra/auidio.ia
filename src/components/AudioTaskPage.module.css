@@ -1,0 +1,7 @@
+:root {
+  --text-base: 0.875rem;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
