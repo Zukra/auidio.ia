@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { CheckCircle2, LoaderCircle, User } from 'lucide-react';
+import type { ProcessingStep, ProcessingStepStatus } from '@/types';
 
 function getStepIcon(status: ProcessingStepStatus) {
   if (status === 'running') {

@@ -8,10 +8,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link2, LoaderCircle, Play, Trash2, Upload } from 'lucide-react';
 import { FileChip } from '@/components/FileChip';
 import { FieldBlock } from '@/components/FieldBlock';
+import type { AudioProcessRequest, AudioUploadResponse, FileView, FormRunPayload, TaskType } from '@/types';
 
 const launchModes = [
   { value: 'single', label: 'Запустить один раз' },
   { value: 'batch', label: 'Запустить пакетно' },
+  { value: 'history', label: 'Запросы' },
 ] as const;
 
 const taskOptions: { value: TaskType; label: string }[] = [
@@ -28,7 +30,7 @@ const initialRequest: AudioProcessRequest = {
 };
 
 type FormPanelProps = {
-  onRun: (request: AudioProcessRequest) => void | Promise<void>;
+  onRun: (runPayload: FormRunPayload) => void | Promise<void>;
   isProcessing: boolean;
   initialValue?: Partial<AudioProcessRequest>;
 };
@@ -52,6 +54,10 @@ function formatFile(file: File | null): FileView | null {
 export const FormPanel = ({ onRun, isProcessing, initialValue }: FormPanelProps) => {
   const [launchMode, setLaunchMode] = useState<(typeof launchModes)[number]['value']>('single');
   const [request, setRequest] = useState<AudioProcessRequest>({ ...initialRequest, ...initialValue });
+  const [uploadFileId, setUploadFileId] = useState('');
+  const [uploadMeta, setUploadMeta] = useState<AudioUploadResponse | null>(null);
+  const [uploadState, setUploadState] = useState<'idle' | 'uploading' | 'uploaded' | 'error'>('idle');
+  const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const fileView = useMemo(() => formatFile(request.file), [request.file]);
 
@@ -59,13 +65,51 @@ export const FormPanel = ({ onRun, isProcessing, initialValue }: FormPanelProps)
     setRequest((current) => ({ ...current, [field]: event.target.value }));
   };
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const nextFile = event.target.files?.[0] ?? null;
     setRequest((current) => ({ ...current, file: nextFile }));
+    setUploadError('');
+
+    if (!nextFile) {
+      setUploadFileId('');
+      setUploadMeta(null);
+      setUploadState('idle');
+      return;
+    }
+
+    setUploadState('uploading');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', nextFile);
+
+      const response = await fetch('/api/files/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Не удалось загрузить файл');
+      }
+
+      const data = await response.json() as AudioUploadResponse;
+      setUploadFileId(data.id);
+      setUploadMeta(data);
+      setUploadState('uploaded');
+    } catch (error) {
+      setUploadFileId('');
+      setUploadMeta(null);
+      setUploadState('error');
+      setUploadError(error instanceof Error ? error.message : 'Не удалось загрузить файл');
+    }
   };
 
   const handleFileRemove = () => {
     setRequest((current) => ({ ...current, file: null }));
+    setUploadFileId('');
+    setUploadMeta(null);
+    setUploadState('idle');
+    setUploadError('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -73,9 +117,51 @@ export const FormPanel = ({ onRun, isProcessing, initialValue }: FormPanelProps)
 
   const handleClear = () => {
     setRequest({ ...initialRequest, ...initialValue });
+    setUploadFileId('');
+    setUploadMeta(null);
+    setUploadState('idle');
+    setUploadError('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const isRunDisabled = isProcessing || uploadState === 'uploading' || !uploadFileId;
+
+  const handleRun = () => {
+    if (!uploadFileId) {
+      setUploadState('error');
+      setUploadError('Сначала загрузите аудиофайл');
+      return;
+    }
+
+    onRun({
+      payload: {
+        inputs: {
+          audio_file: {
+            type: 'audio',
+            transfer_method: 'local_file',
+            url: '',
+            upload_file_id: uploadFileId,
+          },
+          type_task: request.typeTask,
+          user_id: request.userId ?? '',
+          callback_url: request.callbackUrl ?? '',
+        },
+        response_mode: 'streaming',
+      },
+      upload: uploadMeta ?? {
+        id: uploadFileId,
+        name: request.file?.name ?? '',
+        size: request.file?.size ?? 0,
+        extension: request.file?.name.split('.').at(-1) ?? '',
+        mime_type: request.file?.type ?? 'application/octet-stream',
+        created_by: '',
+        created_at: Math.floor(Date.now() / 1000),
+        preview_url: null,
+        source_url: '',
+      },
+    });
   };
 
   return (
@@ -122,6 +208,12 @@ export const FormPanel = ({ onRun, isProcessing, initialValue }: FormPanelProps)
                   onChange={handleFileChange}
                 />
                 <FileChip fileView={fileView} onRemove={handleFileRemove} />
+                <p className="text-xs text-slate-500 dark:text-zinc-500">
+                  {uploadState === 'uploading' && 'Файл загружается и получает идентификатор...'}
+                  {uploadState === 'uploaded' && `Файл загружен. id: ${uploadFileId}`}
+                  {uploadState === 'error' && uploadError}
+                  {uploadState === 'idle' && 'После выбора файл будет загружен перед запуском обработки.'}
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -174,10 +266,10 @@ export const FormPanel = ({ onRun, isProcessing, initialValue }: FormPanelProps)
                 <Button
                   type="button"
                   className="h-11 rounded-2xl bg-blue-600 px-5 text-white hover:bg-blue-500"
-                  onClick={() => onRun(request)}
-                  disabled={isProcessing}
+                  onClick={handleRun}
+                  disabled={isRunDisabled}
                 >
-                  {isProcessing ?
+                  {isProcessing || uploadState === 'uploading' ?
                     <LoaderCircle className="size-4 animate-spin" /> :
                     <Play className="size-4" data-icon="inline-start" />
                   }
@@ -215,6 +307,23 @@ export const FormPanel = ({ onRun, isProcessing, initialValue }: FormPanelProps)
                     </SelectGroup>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value={launchModes[2].value} className="mt-0 flex-1">
+            <div className="flex min-h-svh p-6">
+              <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
+                <div>
+                  <h1 className="font-medium">Project ready!</h1>
+                  <p>You may now add components and start building.</p>
+                  <p>We&apos;ve already added the button component for you.</p>
+                  <Button className="mt-2">Button</Button>
+                </div>
+                <div className="font-mono text-xs text-muted-foreground">
+                  (Press <kbd>d</kbd> to toggle dark mode)
+                </div>
+
               </div>
             </div>
           </TabsContent>
