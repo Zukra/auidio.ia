@@ -41,13 +41,12 @@ export const ResultWorkspace = ({ execution, activeTab, onTabChange, steps }: Re
         </CardContent>
       </Card>
 
-
       <Card className="flex-1 border-slate-200/80 bg-white/70 dark:border-white/8 dark:bg-white/[0.025]">
         <CardContent className="flex h-full flex-col p-4">
           <Tabs value={activeTab} onValueChange={onTabChange} className="flex h-full flex-col gap-4">
             <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-3 dark:border-white/8">
-              <TabsList className="h-auto rounded-none bg-transparent p-0">
-                <TabsTrigger value="result" className="rounded-none border-b-2 border-transparent px-0 py-2 pr-6 text-sm font-semibold text-slate-500 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-slate-900 data-[state=active]:shadow-none dark:text-zinc-500 dark:data-[state=active]:text-white">
+              <TabsList variant="line" className="">
+                <TabsTrigger value="result" className="">
                   РЕЗУЛЬТАТ
                 </TabsTrigger>
                 <TabsTrigger value="details" className="rounded-none border-b-2 border-transparent px-0 py-2 text-sm font-semibold text-slate-500 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-slate-900 data-[state=active]:shadow-none dark:text-zinc-500 dark:data-[state=active]:text-white">

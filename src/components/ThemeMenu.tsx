@@ -17,7 +17,7 @@ export const ThemeMenu = () => {
   ];
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Settings2 size={24} />
       </DropdownMenuTrigger>

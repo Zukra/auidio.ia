@@ -158,7 +158,6 @@ export function AudioTaskPage() {
 
         <Header />
 
-        {/* <main className="grid flex-1 gap-2 md:grid-cols-[minmax(320px,0.85fr)_minmax(0,1.15fr)] xl:grid-cols-[minmax(320px,520px)_minmax(0,1fr)]"> */}
         <main className="grid flex-1 gap-2 md:grid-cols-[minmax(320px,0.85fr)_minmax(0,1.15fr)] xl:grid-cols-[minmax(320px,520px)_minmax(0,1fr)]">
           <FormPanel
             request={request}

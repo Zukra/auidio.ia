@@ -54,13 +54,9 @@ export const FormPanel = ({
     <Card className="w-full min-w-0 border-slate-200/80 bg-white/70 dark:border-white/8 dark:bg-white/[0.025]">
       <CardContent className="flex h-full flex-col gap-6 p-4">
         <Tabs value={launchMode} onValueChange={(value) => setLaunchMode(value as (typeof launchModes)[number]['value'])} className="gap-6">
-          <TabsList className="h-auto w-fit1 rounded-none bg-transparent p-0">
+          <TabsList variant="line" className="">
             {launchModes.map((mode) => (
-              <TabsTrigger
-                key={mode.value}
-                value={mode.value}
-                className="rounded-none border-b-2 border-transparent px-0 py-3 pr-6 text-base text-slate-500 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-slate-900 data-[state=active]:shadow-none dark:text-zinc-500 dark:data-[state=active]:text-white"
-              >
+              <TabsTrigger key={mode.value} value={mode.value} className="">
                 {mode.label}
               </TabsTrigger>
             ))}
@@ -84,10 +80,9 @@ export const FormPanel = ({
                     type="button"
                     variant="outline"
                     className="h-11 justify-center rounded-2xl border-slate-200 bg-white/80 text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-white/8 dark:bg-white/[0.03] dark:text-zinc-500 dark:hover:bg-white/[0.05] dark:hover:text-zinc-200"
-                    disabled
                   >
                     <Link2 className="size-4" />
-                    Вставить ссылку на файл
+                    Cсылка на файл
                   </Button>
                 </div>
                 <input
@@ -137,7 +132,7 @@ export const FormPanel = ({
                 />
               </FieldBlock>
 
-              <div className="mt-auto flex flex-col inline-flex items-center items-stretch justify-between gap-6 pt-4 sm:flex-row sm:items-center">
+              <div className="mt-auto flex flex-col items-stretch justify-between gap-6 pt-4 sm:flex-row sm:items-center">
                 <Button
                   type="button"
                   variant="outline"
@@ -166,34 +161,34 @@ export const FormPanel = ({
 
           <TabsContent value="batch" className="mt-0 flex-1">
             <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
-        </div>
-        <div className="font-mono text-xs text-muted-foreground">
-          (Press <kbd>d</kbd> to toggle dark mode)
-        </div>
+              <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
+                <div>
+                  <h1 className="font-medium">Project ready!</h1>
+                  <p>You may now add components and start building.</p>
+                  <p>We&apos;ve already added the button component for you.</p>
+                  <Button className="mt-2">Button</Button>
+                </div>
+                <div className="font-mono text-xs text-muted-foreground">
+                  (Press <kbd>d</kbd> to toggle dark mode)
+                </div>
 
-        <Select>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a fruit" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectLabel>Fruits</SelectLabel>
-              <SelectItem value="apple">Apple</SelectItem>
-              <SelectItem value="banana">Banana</SelectItem>
-              <SelectItem value="blueberry">Blueberry</SelectItem>
-              <SelectItem value="grapes">Grapes</SelectItem>
-              <SelectItem value="pineapple">Pineapple</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </div>    
-    </div>
+                <Select>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a fruit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Fruits</SelectLabel>
+                      <SelectItem value="apple">Apple</SelectItem>
+                      <SelectItem value="banana">Banana</SelectItem>
+                      <SelectItem value="blueberry">Blueberry</SelectItem>
+                      <SelectItem value="grapes">Grapes</SelectItem>
+                      <SelectItem value="pineapple">Pineapple</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </CardContent>
