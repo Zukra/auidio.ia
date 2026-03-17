@@ -1,4 +1,4 @@
-import { useState, ChangeEvent, RefObject } from 'react';
+import { ChangeEvent, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,25 +9,10 @@ import { Link2, LoaderCircle, Play, Trash2, Upload } from 'lucide-react';
 import { FileChip } from '@/components/FileChip';
 import { FieldBlock } from '@/components/FieldBlock';
 
-
 const launchModes = [
   { value: 'single', label: 'Запустить один раз' },
   { value: 'batch', label: 'Запустить пакетно' },
 ] as const;
-
-type FormPanelProps = {
-  request: AudioProcessRequest;
-  fileView: FileView | null;
-  fileInputRef: RefObject<HTMLInputElement | null>;
-  onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  onFileRemove: () => void;
-  onTaskTypeChange: (value: TaskType) => void;
-  onUserIdChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  onCallbackChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  onClear: () => void;
-  onRun: () => void;
-  isProcessing: boolean;
-};
 
 const taskOptions: { value: TaskType; label: string }[] = [
   { value: 'summary', label: 'summary' },
@@ -35,20 +20,63 @@ const taskOptions: { value: TaskType; label: string }[] = [
   { value: 'transcription & summary', label: 'transcription & summary' },
 ];
 
-export const FormPanel = ({
-                            request,
-                            fileView,
-                            fileInputRef,
-                            onFileChange,
-                            onFileRemove,
-                            onTaskTypeChange,
-                            onUserIdChange,
-                            onCallbackChange,
-                            onClear,
-                            onRun,
-                            isProcessing,
-                          }: FormPanelProps) => {
+const initialRequest: AudioProcessRequest = {
+  file: null,
+  typeTask: 'summary',
+  userId: '',
+  callbackUrl: '',
+};
+
+type FormPanelProps = {
+  onRun: (request: AudioProcessRequest) => void | Promise<void>;
+  isProcessing: boolean;
+  initialValue?: Partial<AudioProcessRequest>;
+};
+
+function formatFile(file: File | null): FileView | null {
+  if (!file) {
+    return null;
+  }
+
+  const parts = file.name.split('.');
+  const extension = parts.length > 1 ? parts.at(-1)?.toUpperCase() ?? 'FILE' : 'FILE';
+  const sizeLabel = `${(file.size / 1024).toFixed(2)} KB`;
+
+  return {
+    name: file.name,
+    extension,
+    sizeLabel,
+  };
+}
+
+export const FormPanel = ({ onRun, isProcessing, initialValue }: FormPanelProps) => {
   const [launchMode, setLaunchMode] = useState<(typeof launchModes)[number]['value']>('single');
+  const [request, setRequest] = useState<AudioProcessRequest>({ ...initialRequest, ...initialValue });
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const fileView = useMemo(() => formatFile(request.file), [request.file]);
+
+  const handleTextField = (field: 'userId' | 'callbackUrl') => (event: ChangeEvent<HTMLInputElement>) => {
+    setRequest((current) => ({ ...current, [field]: event.target.value }));
+  };
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const nextFile = event.target.files?.[0] ?? null;
+    setRequest((current) => ({ ...current, file: nextFile }));
+  };
+
+  const handleFileRemove = () => {
+    setRequest((current) => ({ ...current, file: null }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleClear = () => {
+    setRequest({ ...initialRequest, ...initialValue });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   return (
     <Card className="w-full min-w-0 border-slate-200/80 bg-white/70 dark:border-white/8 dark:bg-white/[0.025]">
@@ -62,7 +90,7 @@ export const FormPanel = ({
             ))}
           </TabsList>
 
-          <TabsContent value="single" className="mt-0 flex-1">
+          <TabsContent value={launchModes[0].value} className="mt-0 flex-1">
             <div className="space-y-2">
               <div className="space-y-2">
                 <Label htmlFor="audio-file" className="text-base font-semibold text-slate-900 dark:text-white">audio_file</Label>
@@ -91,16 +119,16 @@ export const FormPanel = ({
                   type="file"
                   accept="audio/*,.wav,.mp3,.m4a"
                   className="hidden"
-                  onChange={onFileChange}
+                  onChange={handleFileChange}
                 />
-                <FileChip fileView={fileView} onRemove={onFileRemove} />
+                <FileChip fileView={fileView} onRemove={handleFileRemove} />
               </div>
 
               <div className="space-y-2">
                 <Label className="text-base font-semibold text-slate-900 dark:text-white">
                   type_task
                 </Label>
-                <Select value={request.typeTask} onValueChange={(value) => onTaskTypeChange(value as TaskType)}>
+                <Select value={request.typeTask} onValueChange={(value) => setRequest((current) => ({ ...current, typeTask: value as TaskType }))}>
                   <SelectTrigger className="bg-white/80 text-slate-800 dark:bg-white/[0.03] dark:text-zinc-200">
                     <SelectValue placeholder="Выберите сценарий" />
                   </SelectTrigger>
@@ -117,7 +145,7 @@ export const FormPanel = ({
               <FieldBlock label="user_id" hint="необязательно">
                 <Input
                   value={request.userId}
-                  onChange={onUserIdChange}
+                  onChange={handleTextField('userId')}
                   placeholder="user_id"
                   className="bg-white/80 text-slate-800 placeholder:text-slate-400 dark:bg-white/[0.03] dark:text-zinc-200 dark:placeholder:text-zinc-600"
                 />
@@ -126,7 +154,7 @@ export const FormPanel = ({
               <FieldBlock label="callback_url" hint="необязательно">
                 <Input
                   value={request.callbackUrl}
-                  onChange={onCallbackChange}
+                  onChange={handleTextField('callbackUrl')}
                   placeholder="callback_url"
                   className="bg-white/80 text-slate-800 placeholder:text-slate-400 dark:bg-white/[0.03] dark:text-zinc-200 dark:placeholder:text-zinc-600"
                 />
@@ -137,7 +165,7 @@ export const FormPanel = ({
                   type="button"
                   variant="outline"
                   className="h-11 rounded-2xl border-slate-200 bg-white/80 px-5 text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:border-white/8 dark:bg-white/[0.03] dark:text-zinc-300 dark:hover:bg-white/[0.05] dark:hover:text-white"
-                  onClick={onClear}
+                  onClick={handleClear}
                 >
                   <Trash2 className="size-4" />
                   Очистить
@@ -146,7 +174,7 @@ export const FormPanel = ({
                 <Button
                   type="button"
                   className="h-11 rounded-2xl bg-blue-600 px-5 text-white hover:bg-blue-500"
-                  onClick={onRun}
+                  onClick={() => onRun(request)}
                   disabled={isProcessing}
                 >
                   {isProcessing ?
@@ -159,7 +187,7 @@ export const FormPanel = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="batch" className="mt-0 flex-1">
+          <TabsContent value={launchModes[1].value} className="mt-0 flex-1">
             <div className="flex min-h-svh p-6">
               <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
                 <div>
