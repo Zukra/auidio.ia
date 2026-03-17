@@ -69,6 +69,17 @@ export type AudioProcessResponse = {
   };
 };
 
+export type LaunchMode = 'single' | 'batch' | 'history';
+
+export type HistoryItem = {
+  id: string;
+  requestId: string;
+  fileName: string;
+  processedAt: string;
+  taskType: TaskType;
+  result: string;
+};
+
 export type ExecutionState = {
   status: 'idle' | 'processing' | 'completed' | 'error';
   response: AudioProcessResponse | null;

@@ -3,12 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Select, SelectLabel, SelectGroup, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link2, LoaderCircle, Play, Trash2, Upload } from 'lucide-react';
 import { FileChip } from '@/components/FileChip';
 import { FieldBlock } from '@/components/FieldBlock';
-import type { AudioProcessRequest, AudioUploadResponse, FileView, FormRunPayload, TaskType } from '@/types';
+import type { AudioProcessRequest, AudioUploadResponse, FileView, FormRunPayload, LaunchMode, TaskType } from '@/types';
+import { History } from '@/components/History';
 
 const launchModes = [
   { value: 'single', label: 'Запустить один раз' },
@@ -33,6 +34,10 @@ type FormPanelProps = {
   onRun: (runPayload: FormRunPayload) => void | Promise<void>;
   isProcessing: boolean;
   initialValue?: Partial<AudioProcessRequest>;
+  launchMode: LaunchMode;
+  onLaunchModeChange: (value: LaunchMode) => void;
+  selectedHistoryItemId: string | null;
+  onHistorySelect: (historyItemId: string) => void;
 };
 
 function formatFile(file: File | null): FileView | null {
@@ -51,8 +56,15 @@ function formatFile(file: File | null): FileView | null {
   };
 }
 
-export const FormPanel = ({ onRun, isProcessing, initialValue }: FormPanelProps) => {
-  const [launchMode, setLaunchMode] = useState<(typeof launchModes)[number]['value']>('single');
+export const FormPanel = ({
+  onRun,
+  isProcessing,
+  initialValue,
+  launchMode,
+  onLaunchModeChange,
+  selectedHistoryItemId,
+  onHistorySelect,
+}: FormPanelProps) => {
   const [request, setRequest] = useState<AudioProcessRequest>({ ...initialRequest, ...initialValue });
   const [uploadFileId, setUploadFileId] = useState('');
   const [uploadMeta, setUploadMeta] = useState<AudioUploadResponse | null>(null);
@@ -167,7 +179,7 @@ export const FormPanel = ({ onRun, isProcessing, initialValue }: FormPanelProps)
   return (
     <Card className="w-full min-w-0 border-slate-200/80 bg-white/70 dark:border-white/8 dark:bg-white/[0.025]">
       <CardContent className="flex h-full flex-col gap-6 p-4">
-        <Tabs value={launchMode} onValueChange={(value) => setLaunchMode(value as (typeof launchModes)[number]['value'])} className="gap-6">
+        <Tabs value={launchMode} onValueChange={(value) => onLaunchModeChange(value as LaunchMode)} className="gap-6">
           <TabsList variant="line" className="">
             {launchModes.map((mode) => (
               <TabsTrigger key={mode.value} value={mode.value} className="">
@@ -280,7 +292,7 @@ export const FormPanel = ({ onRun, isProcessing, initialValue }: FormPanelProps)
           </TabsContent>
 
           <TabsContent value={launchModes[1].value} className="mt-0 flex-1">
-            <div className="flex min-h-svh p-6">
+            <div className="flex p-6">
               <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
                 <div>
                   <h1 className="font-medium">Project ready!</h1>
@@ -312,20 +324,10 @@ export const FormPanel = ({ onRun, isProcessing, initialValue }: FormPanelProps)
           </TabsContent>
 
           <TabsContent value={launchModes[2].value} className="mt-0 flex-1">
-            <div className="flex min-h-svh p-6">
-              <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-                <div>
-                  <h1 className="font-medium">Project ready!</h1>
-                  <p>You may now add components and start building.</p>
-                  <p>We&apos;ve already added the button component for you.</p>
-                  <Button className="mt-2">Button</Button>
-                </div>
-                <div className="font-mono text-xs text-muted-foreground">
-                  (Press <kbd>d</kbd> to toggle dark mode)
-                </div>
-
-              </div>
-            </div>
+            <History
+              selectedHistoryItemId={selectedHistoryItemId}
+              onSelect={onHistorySelect}
+            />
           </TabsContent>
         </Tabs>
       </CardContent>

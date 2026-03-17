@@ -3,17 +3,50 @@
 import { useCallback, useRef, useState } from 'react';
 import { Header } from '@/components/Header';
 import { FormPanel } from '@/components/FormPanel';
+import { HistoryDetails } from '@/components/HistoryDetails';
 import { ResultWorkspace } from '@/components/ResultWorkspace';
-import type { AudioProcessResponse, AudioProcessStreamEvent, ExecutionState, FormRunPayload, ProcessingStep } from '@/types';
+import type { AudioProcessResponse, AudioProcessStreamEvent, ExecutionState, FormRunPayload, HistoryItem, LaunchMode, ProcessingStep } from '@/types';
 
 import './AudioTaskPage.module.css';
 
 export function AudioTaskPage() {
   const [steps, setSteps] = useState<ProcessingStep[]>([]);
   const [execution, setExecution] = useState<ExecutionState>({ status: 'idle', response: null });
-  const [activeResultTab, setActiveResultTab] = useState('result');
+  const [launchMode, setLaunchMode] = useState<LaunchMode>('single');
+  const [historyDetailsErrorMessage, setHistoryDetailsErrorMessage] = useState('');
+  const [historyDetailsLoading, setHistoryDetailsLoading] = useState(false);
+  const [selectedHistoryItemId, setSelectedHistoryItemId] = useState<string | null>(null);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<HistoryItem | null>(null);
   const runIdRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  const handleHistorySelect = useCallback(async (historyItemId: string) => {
+    setSelectedHistoryItemId(historyItemId);
+    setSelectedHistoryItem(null);
+    setHistoryDetailsErrorMessage('');
+    setHistoryDetailsLoading(true);
+
+    try {
+      const response = await fetch('/api/files/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: historyItemId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null) as { message?: string } | null;
+        throw new Error(errorData?.message ?? 'Не удалось загрузить результат записи');
+      }
+
+      const data = await response.json() as HistoryItem;
+      setSelectedHistoryItem(data);
+    } catch (error) {
+      setSelectedHistoryItem(null);
+      setHistoryDetailsErrorMessage(error instanceof Error ? error.message : 'Не удалось загрузить результат записи');
+    } finally {
+      setHistoryDetailsLoading(false);
+    }
+  }, []);
 
   const handleRun = useCallback(async ({ payload, upload }: FormRunPayload) => {
     runIdRef.current += 1;
@@ -23,7 +56,6 @@ export function AudioTaskPage() {
     abortControllerRef.current = abortController;
 
     setExecution({ status: 'processing', response: null, errorMessage: undefined });
-    setActiveResultTab('result');
     setSteps([]);
 
     try {
@@ -158,14 +190,24 @@ export function AudioTaskPage() {
         <Header />
 
         <main className="grid flex-1 gap-2 md:grid-cols-[minmax(320px,0.85fr)_minmax(0,1.15fr)] xl:grid-cols-[minmax(320px,520px)_minmax(0,1fr)]">
-          <FormPanel onRun={handleRun} isProcessing={execution.status === 'processing'} />
-
-          <ResultWorkspace
-            execution={execution}
-            activeTab={activeResultTab}
-            onTabChange={setActiveResultTab}
-            steps={steps}
+          <FormPanel
+            onRun={handleRun}
+            isProcessing={execution.status === 'processing'}
+            launchMode={launchMode}
+            onLaunchModeChange={setLaunchMode}
+            selectedHistoryItemId={selectedHistoryItemId}
+            onHistorySelect={handleHistorySelect}
           />
+
+          {launchMode === 'history' ? (
+            <HistoryDetails
+              historyItem={selectedHistoryItem}
+              isLoading={historyDetailsLoading}
+              errorMessage={historyDetailsErrorMessage}
+            />
+          ) : (
+            <ResultWorkspace execution={execution} steps={steps} />
+          )}
         </main>
       </div>
     </div>
