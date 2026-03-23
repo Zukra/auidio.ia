@@ -1,8 +1,7 @@
-import SessionProviderClient from '@/providers/session-provider-client';
-import { ThemeProvider } from '@/providers/theme-provider';
 import { Geist, Geist_Mono } from 'next/font/google';
 import type { Metadata } from 'next';
 import { cn } from '@/lib/utils';
+import { AppProviders } from '@/providers/providers';
 import './globals.css';
 
 const fontSans = Geist({ subsets: ['latin'], variable: '--font-sans' });
@@ -18,16 +17,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="ru" suppressHydrationWarning>
       <body className={`min-h-screen bg-background text-foreground ` + cn('antialiased', fontMono.variable, 'font-sans', fontSans.variable)}>
-      <SessionProviderClient>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
-        </SessionProviderClient>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );
