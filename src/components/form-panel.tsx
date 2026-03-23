@@ -6,10 +6,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link2, LoaderCircle, Play, Trash2, Upload } from 'lucide-react';
-import { FileChip } from '@/components/FileChip';
-import { FieldBlock } from '@/components/FieldBlock';
+import { FileChip } from '@/components/file-chip';
+import { FieldBlock } from '@/components/field-block';
 import type { AudioProcessRequest, AudioUploadResponse, FileView, FormRunPayload, LaunchMode, TaskType } from '@/types';
-import { History } from '@/components/History';
+import { History } from '@/components/history';
 
 const launchModes = [
   { value: 'single', label: 'Запустить один раз' },

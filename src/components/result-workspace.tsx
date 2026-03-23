@@ -5,8 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Copy, Waves } from 'lucide-react';
 
-import { OutputBox } from '@/components/OutputBox';
-import { ProcessStepRow } from '@/components/ProcessStepRow';
+import { OutputBox } from '@/components/output-box';
+import { ProcessStepRow } from '@/components/process-step-row';
 import type { ExecutionState, ProcessingStep } from '@/types';
 
 type ResultWorkspaceProps = {

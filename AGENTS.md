@@ -49,4 +49,57 @@ Use `pnpm` (the repo includes `pnpm-lock.yaml`).
   - Carefully analyze my files and requirements
   - Display information in an easy-to-read format
   - Use the components ui.shadcn.com for the front-end
-  
+
+## 1) Структура репозитория
+```txt
+project-app/
+  public/                    # статические ассеты (svg, logo, favicon и т.д.)
+  src/
+    app/                     # Next.js App Router: страницы, layout, API-роуты (BFF)
+      api/                   # серверные route handlers, проксирующие backend API
+    features/                # доменные модули (feature-first)
+    components/              # переиспользуемые компоненты UI/лейаута
+      ui/                    # базовые UI-примитивы (button, input, dialog, table и т.д.)
+    providers/               # глобальные React providers (auth/query/theme/layout)
+    lib/                     # инфраструктурные утилиты (http, proxy, форматтеры, helpers)
+    hooks/                   # общие React hooks (не привязанные к конкретной фиче)
+    middleware.ts            # entrypoint Next middleware    
+  eslint.config.mjs          # линтинг
+  .prettierrc                # форматирование
+  tsconfig.json              # TypeScript + alias @/*
+  package.json               # зависимости и npm scripts
+```
+Примечание: названия файлой компонент в kebab-case стиле (например user-profile.tsx)
+
+## 2) Архитектурный подход
+Проект использует **feature-first** подход:
+
+- `src/app` отвечает за маршрутизацию и композицию страниц.
+- `src/features/*` содержит бизнес-логику по доменам.
+- `src/components/ui` хранит общие низкоуровневые UI-компоненты без доменной логики.
+- `src/lib` содержит инфраструктуру (HTTP-клиент, BFF-прокси, форматтеры, утилиты).
+
+## 3) Стандарт структуры фичи
+Новая фича создается в `src/features/<domain>/` и по возможности следует шаблону:
+
+```txt
+src/features/<domain>/
+  api/        # вызовы API + DTO/типы API
+  hooks/      # react-query hooks и адаптеры для UI
+  ui/         # компоненты интерфейса фичи
+  model/      # чистая доменная логика/трансформации
+  store/      # локальные сторы состояния (например, zustand)
+  types/      # доменные типы
+  index.ts    # публичный API фичи (реэкспорты)
+```
+Примечание: не все подпапки обязательны. Если слой не нужен, его не создаем.
+
+## 4) Правила размещения кода
+1. **Новая страница**: `src/app/<route>/page.tsx`.
+2. **Бизнес-логика страницы**: в `src/features/...`, а не в `src/app`.
+3. **Запросы к backend**:
+    - клиент вызывает только `"/api/..."` маршруты приложения;
+    - проксирование во внешний backend делается в `src/app/api/**/route.ts` через `src/lib/apiProxy.ts`.
+4. **Общие UI-примитивы**: `src/components/ui`.
+5. **Общие доменно-независимые утилиты**: `src/lib`.
+6. **Публичные импорты фичи**: через `index.ts` внутри фичи.

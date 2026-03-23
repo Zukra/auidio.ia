@@ -7,10 +7,6 @@ const nextConfig: NextConfig = {
     turbopackFileSystemCacheForDev: false,
     // Enable filesystem caching for `next build`
     turbopackFileSystemCacheForBuild: false,
-    /* turbo: {
-      memoryLimit: 1024 * 1024 * 128,  // 128MB лимит
-      treeShaking: true,  // Удаление неиспользуемого кода
-    },*/
   },
 };
 

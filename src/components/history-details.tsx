@@ -1,7 +1,7 @@
 import { Copy, FileAudio2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { OutputBox } from '@/components/OutputBox';
+import { OutputBox } from '@/components/output-box';
 import type { HistoryItem } from '@/types';
 
 type HistoryDetailsProps = {

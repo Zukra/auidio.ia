@@ -1,13 +1,13 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
-import { Header } from '@/components/Header';
-import { FormPanel } from '@/components/FormPanel';
-import { HistoryDetails } from '@/components/HistoryDetails';
-import { ResultWorkspace } from '@/components/ResultWorkspace';
+import { Header } from '@/components/header';
+import { FormPanel } from '@/components/form-panel';
+import { HistoryDetails } from '@/components/history-details';
+import { ResultWorkspace } from '@/components/result-workspace';
 import type { AudioProcessResponse, AudioProcessStreamEvent, ExecutionState, FormRunPayload, HistoryItem, LaunchMode, ProcessingStep } from '@/types';
 
-import './AudioTaskPage.module.css';
+import './audio-task-page.module.css';
 
 export function AudioTaskPage() {
   const [steps, setSteps] = useState<ProcessingStep[]>([]);

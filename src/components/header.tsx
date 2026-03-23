@@ -1,5 +1,6 @@
 import { Sparkles } from 'lucide-react';
-import { ThemeMenu } from '@/components/ThemeMenu';
+import { ThemeMenu } from '@/components/theme-menu';
+import { NavUser } from '@/components/nav-user';
 
 export const Header = () => {
   return (
@@ -18,6 +19,7 @@ export const Header = () => {
         </div>
       </div>
       <ThemeMenu />
+      <NavUser/>
     </header>
   );
 };
