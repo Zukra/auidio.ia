@@ -1,6 +1,6 @@
 import type { AuthOptions, User } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { authenticateWithLdap } from '@/lib/auth/ldap';
+import { authenticateWithLdap, LdapAuthError } from '@/features/auth/server/ldap';
 
 export const authConfig = {
   providers: [
@@ -11,12 +11,24 @@ export const authConfig = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials): Promise<User | null> {
-        return authenticateWithLdap(credentials);
+        try {
+          return await authenticateWithLdap(credentials);
+        } catch (error) {
+          if (error instanceof LdapAuthError) {
+            throw new Error(error.code);
+          }
+
+          throw new Error('LDAP_AUTH_FAILED');
+        }
       },
     }),
   ],
   session: { strategy: 'jwt', maxAge: 60 * 60 * 2 },
   jwt: { maxAge: 60 * 60 * 24 * 30 },
+  pages: {
+    signIn: '/auth/signin',
+    error: '/auth/signin',
+  },
   callbacks: {
     async jwt({ token, user, trigger }) {
       if (user) {

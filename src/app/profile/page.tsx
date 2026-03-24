@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth/next-auth';
+import { auth } from '@/features/auth/index.server';
 
 export default async function Profile() {
   const session = await auth();

@@ -1,5 +1,5 @@
 import { Client } from 'ldapts';
-import type { LdapConfig } from '@/lib/auth/ldap/types';
+import type { LdapConfig } from '@/features/auth/server/ldap/types';
 
 export function createLdapClient(config: LdapConfig): Client {
   return new Client({

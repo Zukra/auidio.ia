@@ -1,4 +1,4 @@
-import type { AdUser } from '@/lib/auth/ldap/types';
+import type { AdUser } from '@/features/auth/server/ldap/types';
 
 export function isAccountDisabled(user: AdUser): boolean {
   return user.dn.toUpperCase().includes('OU=DISABLED USERS'.toUpperCase());

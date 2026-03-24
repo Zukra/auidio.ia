@@ -1,5 +1,5 @@
 import type { Client, Entry } from 'ldapts';
-import type { AdUser } from '@/lib/auth/ldap/types';
+import type { AdUser } from '@/features/auth/server/ldap/types';
 
 const LDAP_ATTRIBUTES = [
   'cn',

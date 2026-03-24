@@ -1,4 +1,4 @@
-import type { LdapConfig } from '@/lib/auth/ldap/types';
+import type { LdapConfig } from '@/features/auth/server/ldap/types';
 
 function requireEnv(name: string): string {
   const value = process.env[name];
