@@ -2,18 +2,25 @@
 
 Эта фича содержит полный модуль авторизации и переносится между проектами целиком.
 
-## Структура
+## Быстрый перенос (TL;DR)
+
+1. Скопируйте `src/features/auth/**` целиком.
+2. Подключите интеграционные файлы:
+   - `src/app/api/auth/[...nextauth]/route.ts`
+   - `src/app/auth/signin/page.tsx`
+   - `src/proxy.ts`
+   - `src/providers/providers.tsx`
+3. Проверьте переменные окружения и зависимости.
+
+Подробный список: `./TRANSFER-CHECKLIST.md`.
+
+## Что Внутри Фичи
 
 - `server/ldap/*` — LDAP bind/search и серверная логика пользователя.
 - `server/next-auth/*` — конфиг NextAuth, server helper и type augmentation.
 - `client/session-provider-client.tsx` — клиентский провайдер сессии.
 - `ui/ldap-sign-in-form.tsx` — кастомная форма входа.
 - `model/error-messages.ts` — маппинг ошибок авторизации в сообщения UI.
-
-## Точки экспорта
-
-- Сервер: `@/features/auth/index.server`
-- Клиент: `@/features/auth/index.client`
 
 Важно: не смешивать server/client импорты в одном barrel.
 
@@ -31,13 +38,50 @@ const handler = NextAuth(authConfig);
 export { handler as GET, handler as POST };
 ```
 
-2. Server helper:
+2. `proxy` (бывший `middleware`) для приватных роутов:
+```ts
+// src/proxy.ts
+import { withAuth } from 'next-auth/middleware';
+import type { NextRequestWithAuth } from 'next-auth/middleware';
+import { NextResponse } from 'next/server';
+
+const pages = { signIn: '/auth/signin', error: '/auth/signin' };
+
+export default withAuth(
+  function proxy(request: NextRequestWithAuth) {
+    if (request.nextauth.token) {
+      return NextResponse.next();
+    }
+
+    //  формирование сообщения об истечении срока действия сессии
+    const signInUrl = new URL(pages.signIn, request.url);
+    const callbackUrl = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+
+    signInUrl.searchParams.set('callbackUrl', callbackUrl);
+    signInUrl.searchParams.set('error', 'SessionRequired');
+
+    return NextResponse.redirect(signInUrl);
+  },
+  {
+    callbacks: { authorized: () => true },
+    pages,
+  },
+);
+
+export const config = {
+  matcher: ['/profile/:path*'],
+};
+```
+
+Важно: `pages` в `src/proxy.ts` должны совпадать с `pages` в `src/features/auth/server/next-auth/auth.config.ts`.
+
+3. Server helper:
 
 ```ts
 import { auth } from '@/features/auth/index.server';
 ```
 
-3. Session provider:
+4. Session provider:
 
 ```tsx
 import { SessionProviderClient } from '@/features/auth/index.client';
@@ -45,13 +89,13 @@ import { SessionProviderClient } from '@/features/auth/index.client';
 <SessionProviderClient>{children}</SessionProviderClient>
 ```
 
-4. Кастомная страница входа:
+5. Кастомная страница входа:
 
 `src/app/auth/signin/page.tsx` использует `LdapSignInForm`.
 
-5. Server-side session (App Router):
+6. Server-side session (App Router):
 
-Файл: `src/app/profile/page.tsx`
+`src/app/profile/page.tsx`
 
 ```tsx
 import { auth } from '@/features/auth/index.server';
@@ -69,9 +113,9 @@ export default async function Profile() {
 }
 ```
 
-6. Client-side session:
+7. Client-side session:
 
-Файл: `src/components/nav-user.tsx`
+ `src/components/nav-user.tsx`
 
 ```tsx
 'use client';
@@ -102,15 +146,18 @@ export function NavUser() {
 
 Важно: для `useSession()` должен быть подключён `SessionProviderClient` в `src/providers/providers.tsx`.
 
-## Обязательные ENV
+## Обязательные ENV и зависимости
 
 - `NEXTAUTH_URL`
 - `NEXTAUTH_SECRET`
 - `AUTH_LDAP_SERVER_URI`
 - `AUTH_LDAP_BASE_DN`
 
-## Необходимые зависимости из `package.json`
-
-Минимальный runtime-набор для этой auth-фичи:
 - `next-auth`
 - `ldapts`
+
+## Проверка После Переноса
+
+- Неавторизованный пользователь открывает `/profile` и получает редирект на `/auth/signin` с `callbackUrl` и `error=SessionRequired`.
+- После успешного входа пользователь возвращается на `callbackUrl`.
+- `useSession()` корректно работает в клиентских компонентах через `SessionProviderClient`.

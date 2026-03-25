@@ -16,7 +16,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   Callback: 'Ошибка callback авторизации.',
   OAuthAccountNotLinked: 'Аккаунт уже привязан к другому способу входа.',
   EmailSignin: 'Ошибка входа по email.',
-  SessionRequired: 'Для доступа к странице требуется авторизация.',
+  SessionRequired: 'Для доступа требуется авторизация. Пожалуйста, войдите снова.',
+  SessionExpired: 'Сессия истекла. Авторизуйтесь повторно.',
   Default: 'Не удалось выполнить вход. Попробуйте снова.',
 };
 
