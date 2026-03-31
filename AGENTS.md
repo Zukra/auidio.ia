@@ -20,24 +20,17 @@ Use `pnpm` (the repo includes `pnpm-lock.yaml`).
 - TypeScript is `strict`; prefer explicit types on public APIs and server-layer functions.
 - Follow existing style: 2-space indentation, semicolons, and single quotes in TS/TSX files.
 - Use path aliases from `tsconfig.json`: import app code via `@/...` instead of long relative paths.
-- Naming: components and providers in `PascalCase`, hooks in `camelCase` prefixed with `use`, service/repository files as `*.service.ts` and `*.repository.ts`.
+- Naming: components and providers in `kebab-case`, hooks in `kebab-case` prefixed with `use`, service/repository files as `*.service.ts` and `*.repository.ts`.
 
 ## Testing Guidelines
-- There is currently no dedicated test runner configured. Minimum quality gate is passing `pnpm lint` and `pnpm build`.
+- There is currently no dedicated test runner configured. Minimum quality gate is passing `pnpm lint`.
 - For logic-heavy additions (for example in `src/server/`), include focused tests with your preferred framework and document the command in the PR.
-- Keep test filenames consistent (`*.test.ts` / `*.test.tsx`) and colocate near the code under test.
-
-## Commit & Pull Request Guidelines
-- Git history is minimal (initial `start` commit), so no strict convention is established yet.
-- Use clear, imperative commit messages (example: `Add profile update validation`). Keep each commit scoped to one concern.
-- PRs should include: purpose, key changes, local verification steps, and any schema/env updates.
-- Link related issues and include screenshots/GIFs for UI changes under `src/app/` or `src/components/`.
 
 ## Security & Configuration Tips
 - Keep secrets in `.env`; never commit credentials.
 - Ensure `DATABASE_URL` is set before running Prisma commands.
 
-## Prompt: [User rules]
+## User rules
   - Prioritize clean, efficient and maintainable code
   - Follow best practices and design patterns appropriate for language, framework and project
   - If task is unclear ask clarifying questions
@@ -49,6 +42,7 @@ Use `pnpm` (the repo includes `pnpm-lock.yaml`).
   - Carefully analyze my files and requirements
   - Display information in an easy-to-read format
   - Use the components ui.shadcn.com for the front-end
+  - Use the next-auth.js for the auth ldap
 
 ## 1) Структура репозитория
 ```txt
