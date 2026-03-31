@@ -8,8 +8,8 @@
 2. Подключите интеграционные файлы:
    - `src/app/api/auth/[...nextauth]/route.ts`
    - `src/app/auth/signin/page.tsx`
-   - `src/proxy.ts`
-   - `src/providers/providers.tsx`
+   - `src/providers/providers.tsx` 
+      либо добавьте в `src/app/layout.tsx` провайдер из `src/features/auth/client/session-provider-client.tsx`
 3. Проверьте переменные окружения и зависимости.
 
 Подробный список: `./TRANSFER-CHECKLIST.md`.
@@ -18,6 +18,8 @@
 
 - `server/ldap/*` — LDAP bind/search и серверная логика пользователя.
 - `server/next-auth/*` — конфиг NextAuth, server helper и type augmentation.
+- `config/auth-settings.ts` — единая точка runtime-настроек auth.
+- `config/constants.ts` — дефолтные константы таймаутов/интервалов auth.
 - `client/session-provider-client.tsx` — клиентский провайдер сессии.
 - `ui/ldap-sign-in-form.tsx` — кастомная форма входа.
 - `model/error-messages.ts` — маппинг ошибок авторизации в сообщения UI.
@@ -38,50 +40,13 @@ const handler = NextAuth(authConfig);
 export { handler as GET, handler as POST };
 ```
 
-2. `proxy` (бывший `middleware`) для приватных роутов:
-```ts
-// src/proxy.ts
-import { withAuth } from 'next-auth/middleware';
-import type { NextRequestWithAuth } from 'next-auth/middleware';
-import { NextResponse } from 'next/server';
-
-const pages = { signIn: '/auth/signin', error: '/auth/signin' };
-
-export default withAuth(
-  function proxy(request: NextRequestWithAuth) {
-    if (request.nextauth.token) {
-      return NextResponse.next();
-    }
-
-    //  формирование сообщения об истечении срока действия сессии
-    const signInUrl = new URL(pages.signIn, request.url);
-    const callbackUrl = `${request.nextUrl.pathname}${request.nextUrl.search}`;
-
-    signInUrl.searchParams.set('callbackUrl', callbackUrl);
-    signInUrl.searchParams.set('error', 'SessionRequired');
-
-    return NextResponse.redirect(signInUrl);
-  },
-  {
-    callbacks: { authorized: () => true },
-    pages,
-  },
-);
-
-export const config = {
-  matcher: ['/profile/:path*'],
-};
-```
-
-Важно: `pages` в `src/proxy.ts` должны совпадать с `pages` в `src/features/auth/server/next-auth/auth.config.ts`.
-
-3. Server helper:
+2. Server helper:
 
 ```ts
 import { auth } from '@/features/auth/index.server';
 ```
 
-4. Session provider:
+3. Session provider:
 
 ```tsx
 import { SessionProviderClient } from '@/features/auth/index.client';
@@ -89,11 +54,11 @@ import { SessionProviderClient } from '@/features/auth/index.client';
 <SessionProviderClient>{children}</SessionProviderClient>
 ```
 
-5. Кастомная страница входа:
+4. Кастомная страница входа:
 
 `src/app/auth/signin/page.tsx` использует `LdapSignInForm`.
 
-6. Server-side session (App Router):
+5. Server-side session (App Router):
 
 `src/app/profile/page.tsx`
 
@@ -113,7 +78,7 @@ export default async function Profile() {
 }
 ```
 
-7. Client-side session:
+6. Client-side session:
 
  `src/components/nav-user.tsx`
 
@@ -148,16 +113,37 @@ export function NavUser() {
 
 ## Обязательные ENV и зависимости
 
-- `NEXTAUTH_URL`
-- `NEXTAUTH_SECRET`
-- `AUTH_LDAP_SERVER_URI`
-- `AUTH_LDAP_BASE_DN`
+- `NEXTAUTH_URL=http://localhost:3000`
+- `NEXTAUTH_SECRET=secret_string`
+- `AUTH_LDAP_SERVER_URI=ldap://emk.loc:389`
+- `AUTH_LDAP_BASE_DN=DC=emk,DC=loc`
+- `AUTH_LDAP_SERVICE_USER=<service-login>`
+- `AUTH_LDAP_SERVICE_PASS=<service-password>`
 
+Опциональные ENV для тюнинга:
+- `AUTH_SESSION_MAX_AGE_SECONDS` (default: `30`)
+- `AUTH_JWT_MAX_AGE_SECONDS` (default: `28800`)
+- `AUTH_LDAP_RECHECK_INTERVAL_SECONDS` (default: `60`)
+
+Пакеты:
 - `next-auth`
 - `ldapts`
 
 ## Проверка После Переноса
 
-- Неавторизованный пользователь открывает `/profile` и получает редирект на `/auth/signin` с `callbackUrl` и `error=SessionRequired`.
-- После успешного входа пользователь возвращается на `callbackUrl`.
-- `useSession()` корректно работает в клиентских компонентах через `SessionProviderClient`.
+- Пользователь успешно логинится через LDAP-форму.
+- После логина `auth()` и `useSession()` возвращают актуальную сессию.
+- При `session.error === 'SessionExpired'` выполняется выход и редирект на страницу авторизации.
+
+## Автопродление И Проверка Активности
+
+Алгоритм:
+1. На клиенте `SessionKeepAlive` в `session-provider-client.tsx` периодически вызывает `useSession().update()`.
+2. Каждый `update()` запускает серверный `jwt` callback в `auth.config.ts`.
+3. В `jwt` callback сессия обновляется, а LDAP-проверка активности выполняется по интервалу.
+4. Если пользователь активен в LDAP, сессия продолжает жить.
+5. Если пользователь неактивен или есть ошибка проверки, в токен пишется `error` (`SessionExpired` или `LDAP_CONFIG_ERROR`), после чего `SessionErrorHandler` делает `signOut` и редирект на `/auth/signin?error=...`.
+
+Периодичность:
+- клиентский keep-alive: каждые `DEFAULT_SESSION_KEEP_ALIVE_SECONDS` секунд (`config/constants.ts`);
+- серверный LDAP re-check: не чаще, чем раз в `AUTH_LDAP_RECHECK_INTERVAL_SECONDS` секунд (`config/constants.ts`).

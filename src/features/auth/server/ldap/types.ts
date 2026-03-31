@@ -1,5 +1,3 @@
-import type { User } from 'next-auth';
-
 export type AdUser = {
   dn: string;
   cn: string;
@@ -25,5 +23,3 @@ export type AuthorizeCredentials = {
   username?: string;
   password?: string;
 } | undefined;
-
-export type AuthenticatedUser = User & AdUser;

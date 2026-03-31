@@ -1,10 +1,11 @@
 import type { User } from 'next-auth';
+import { getAuthSettings } from '@/features/auth/config/auth-settings';
 import { createLdapClient } from '@/features/auth/server/ldap/client';
 import { getLdapConfig } from '@/features/auth/server/ldap/config';
 import { LdapAuthError } from '@/features/auth/server/ldap/errors';
 import { isAccountDisabled, normalizeBindUsername, normalizeLogin } from '@/features/auth/server/ldap/helpers';
 import { findUserByLogin } from '@/features/auth/server/ldap/repository';
-import type { AuthorizeCredentials, AuthenticatedUser } from '@/features/auth/server/ldap/types';
+import type { AdUser, AuthorizeCredentials } from '@/features/auth/server/ldap/types';
 
 function mapLdapError(error: unknown): LdapAuthError {
   const rawCode = String((error as { code?: unknown })?.code ?? '').toUpperCase();
@@ -23,6 +24,40 @@ function mapLdapError(error: unknown): LdapAuthError {
   return new LdapAuthError('LDAP_AUTH_FAILED');
 }
 
+function getLdapConfigOrThrow(): ReturnType<typeof getLdapConfig> {
+  try {
+    return getLdapConfig();
+  } catch {
+    throw new LdapAuthError('LDAP_CONFIG_ERROR');
+  }
+}
+
+async function withBoundLdapClient<T>(
+  bindUsername: string,
+  bindPassword: string,
+  operation: (context: {
+    client: ReturnType<typeof createLdapClient>;
+    config: ReturnType<typeof getLdapConfig>;
+  }) => Promise<T>,
+): Promise<T> {
+  const config = getLdapConfigOrThrow();
+  const client = createLdapClient(config);
+
+  try {
+    await client.bind(bindUsername, bindPassword);
+
+    return await operation({ client, config });
+  } catch (error) {
+    throw mapLdapError(error);
+  } finally {
+    try {
+      await client.unbind();
+    } catch {
+      // Ignore unbind errors.
+    }
+  }
+}
+
 export async function authenticateWithLdap(credentials: AuthorizeCredentials): Promise<User> {
   if (!credentials) {
     throw new LdapAuthError('LDAP_INVALID_CREDENTIALS');
@@ -35,31 +70,12 @@ export async function authenticateWithLdap(credentials: AuthorizeCredentials): P
     throw new LdapAuthError('LDAP_INVALID_CREDENTIALS');
   }
 
-  let config: ReturnType<typeof getLdapConfig>;
-  try {
-    config = getLdapConfig();
-  } catch {
-    throw new LdapAuthError('LDAP_CONFIG_ERROR');
-  }
-
-  const client = createLdapClient(config);
-  let user: AuthenticatedUser | null = null;
-
-  try {
-    await client.bind(bindUsername, bindPassword);
-
+  const user = await withBoundLdapClient(bindUsername, bindPassword, async ({ client, config }) => {
     const login = normalizeLogin(bindUsername);
     const foundUser = await findUserByLogin(client, config.baseDn, login);
-    user = foundUser ? { id: foundUser.sAMAccountName, ...foundUser } : null;
-  } catch (error) {
-    throw mapLdapError(error);
-  } finally {
-    try {
-      await client.unbind();
-    } catch {
-      // Игнорируем ошибки unbind
-    }
-  }
+
+    return foundUser ? { id: foundUser.sAMAccountName, ...foundUser } : null;
+  }) as (User & AdUser) | null;
 
   if (!user) {
     throw new LdapAuthError('LDAP_USER_NOT_FOUND');
@@ -71,4 +87,38 @@ export async function authenticateWithLdap(credentials: AuthorizeCredentials): P
   }
 
   return user;
+}
+
+function getServiceCredentials(): { username: string; password: string } {
+  const settings = getAuthSettings();
+  const username = settings.ldapServiceUser;
+  const password = settings.ldapServicePass;
+
+  if (!username || !password) {
+    throw new LdapAuthError('LDAP_CONFIG_ERROR');
+  }
+
+  return { username, password };
+}
+
+export async function isUserActiveByLogin(login: string): Promise<boolean> {
+  const normalizedLogin = normalizeLogin(login);
+  if (!normalizedLogin) {
+    return false;
+  }
+
+  const serviceCredentials = getServiceCredentials();
+
+  return withBoundLdapClient(
+    normalizeBindUsername(serviceCredentials.username),
+    serviceCredentials.password,
+    async ({ client, config }) => {
+      const foundUser = await findUserByLogin(client, config.baseDn, normalizedLogin);
+      if (!foundUser) {
+        return false;
+      }
+
+      return !isAccountDisabled(foundUser);
+    },
+  );
 }

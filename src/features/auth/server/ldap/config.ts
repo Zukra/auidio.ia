@@ -1,18 +1,12 @@
 import type { LdapConfig } from '@/features/auth/server/ldap/types';
-
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing environment variable: ${name}`);
-  }
-
-  return value;
-}
+import { getAuthSettings } from '@/features/auth/config/auth-settings';
 
 export function getLdapConfig(): LdapConfig {
+  const settings = getAuthSettings();
+
   return {
-    serverUri: requireEnv('AUTH_LDAP_SERVER_URI'),
-    baseDn: requireEnv('AUTH_LDAP_BASE_DN'),
+    serverUri: settings.ldapServerUri,
+    baseDn: settings.ldapBaseDn,
     // domain: requireEnv('AUTH_LDAP_DOMAIN'),
   };
 }

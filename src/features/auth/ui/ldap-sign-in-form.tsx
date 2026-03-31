@@ -31,6 +31,8 @@ export function LdapSignInForm() {
     setRequestError(null);
     setIsSubmitting(true);
 
+    // TODO process.env.NEXT_PUBLIC_SERVICE_USER плохо использовать.
+    //  Серверные константы недоступны. Позже нужно переделать
     const result = await signIn('credentials', {
       // username: form.username,
       // password: form.password,

@@ -1,18 +1,15 @@
 import type { DefaultSession } from 'next-auth';
-import type { JWT as DefaultJWT } from 'next-auth/jwt';
+import type { AdUser } from '@/features/auth/server/ldap/types';
+
+type SessionErrorCode = 'SessionExpired' | 'LDAP_CONFIG_ERROR';
 
 declare module 'next-auth' {
-  interface User {
-    cn?: string;
-    department?: string | [];
-  }
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface User extends AdUser {}
 
   interface Session {
-    user?: DefaultSession['user'] & {
-      cn?: string;
-      department?: string | [];
-    };
-    token?: DefaultJWT;
+    user?: DefaultSession['user'] & User;
+    error?: SessionErrorCode;
   }
 }
 
@@ -21,5 +18,8 @@ declare module 'next-auth/jwt' {
     user?: import('next-auth').User;
     trigger?: string;
     jti?: string;
+    lastLdapValidationAt?: number;
+    error?: SessionErrorCode;
+    exp?: number;
   }
 }

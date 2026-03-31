@@ -3,7 +3,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   LDAP_INVALID_CREDENTIALS: 'Неверный логин или пароль.',
   LDAP_USER_NOT_FOUND: 'Пользователь не найден в LDAP.',
   LDAP_ACCOUNT_DISABLED: 'Учетная запись отключена.',
-  LDAP_CONFIG_ERROR: 'Ошибка конфигурации LDAP на сервере.',
+  LDAP_CONFIG_ERROR: 'Ошибка конфигурации LDAP',
   LDAP_AUTH_FAILED: 'Ошибка авторизации LDAP. Попробуйте ещё раз позже.',
   CredentialsSignin: 'Неверный логин или пароль.',
   AccessDenied: 'Доступ запрещён. Обратитесь к администратору.',
