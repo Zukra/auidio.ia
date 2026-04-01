@@ -58,7 +58,7 @@ async function withBoundLdapClient<T>(
   }
 }
 
-export async function authenticateWithLdap(credentials: AuthorizeCredentials): Promise<User> {
+export async function authenticateLdap(credentials: AuthorizeCredentials): Promise<User> {
   if (!credentials) {
     throw new LdapAuthError('LDAP_INVALID_CREDENTIALS');
   }
@@ -101,24 +101,27 @@ function getServiceCredentials(): { username: string; password: string } {
   return { username, password };
 }
 
-export async function isUserActiveByLogin(login: string): Promise<boolean> {
+export async function getLdapUserByLogin(login: string): Promise<User & AdUser> {
   const normalizedLogin = normalizeLogin(login);
   if (!normalizedLogin) {
-    return false;
+    throw new LdapAuthError('LDAP_INVALID_CREDENTIALS');
   }
 
   const serviceCredentials = getServiceCredentials();
-
-  return withBoundLdapClient(
+  const user = await withBoundLdapClient(
     normalizeBindUsername(serviceCredentials.username),
     serviceCredentials.password,
     async ({ client, config }) => {
       const foundUser = await findUserByLogin(client, config.baseDn, normalizedLogin);
-      if (!foundUser) {
-        return false;
-      }
-
-      return !isAccountDisabled(foundUser);
+      return foundUser ? { id: foundUser.sAMAccountName, ...foundUser } : null;
     },
-  );
+  ) as (User & AdUser) | null;
+
+  if (!user) {
+    throw new LdapAuthError('LDAP_USER_NOT_FOUND');
+  }
+
+  user.isDisabled = isAccountDisabled(user);
+
+  return user;
 }

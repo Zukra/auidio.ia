@@ -1,5 +1,5 @@
-export { authenticateWithLdap } from '@/features/auth/server/ldap/service';
-export { isUserActiveByLogin } from '@/features/auth/server/ldap/service';
+export { authenticateLdap } from '@/features/auth/server/ldap/service';
+export { getLdapUserByLogin } from '@/features/auth/server/ldap/service';
 export { LdapAuthError } from '@/features/auth/server/ldap/errors';
 export { findUserByLogin } from '@/features/auth/server/ldap/repository';
 export { isAccountDisabled, normalizeLogin, normalizeBindUsername } from '@/features/auth/server/ldap/helpers';

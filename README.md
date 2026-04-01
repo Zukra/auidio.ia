@@ -19,3 +19,8 @@ To use the components in your app, import them as follows:
 ```tsx
 import { Button } from "@/components/ui/button";
 ```
+
+## Auth module docs
+
+- `src/features/auth/README.md`
+- `src/features/auth/TRANSFER-CHECKLIST.md`

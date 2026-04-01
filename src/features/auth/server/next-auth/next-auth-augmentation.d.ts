@@ -19,6 +19,7 @@ declare module 'next-auth/jwt' {
     trigger?: string;
     jti?: string;
     lastLdapValidationAt?: number;
+    lastKnownLdapActive?: boolean;
     error?: SessionErrorCode;
     exp?: number;
   }
