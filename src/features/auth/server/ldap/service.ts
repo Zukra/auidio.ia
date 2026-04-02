@@ -3,7 +3,7 @@ import { getAuthSettings } from '@/features/auth/config/auth-settings';
 import { createLdapClient } from '@/features/auth/server/ldap/client';
 import { getLdapConfig } from '@/features/auth/server/ldap/config';
 import { LdapAuthError } from '@/features/auth/server/ldap/errors';
-import { isAccountDisabled, normalizeBindUsername, normalizeLogin } from '@/features/auth/server/ldap/helpers';
+import { isAccountActive, normalizeBindUsername, normalizeLogin } from '@/features/auth/server/ldap/helpers';
 import { findUserByLogin } from '@/features/auth/server/ldap/repository';
 import type { AdUser, AuthorizeCredentials } from '@/features/auth/server/ldap/types';
 
@@ -81,9 +81,9 @@ export async function authenticateLdap(credentials: AuthorizeCredentials): Promi
     throw new LdapAuthError('LDAP_USER_NOT_FOUND');
   }
 
-  user.isDisabled = isAccountDisabled(user);
-  if (user.isDisabled) {
-    throw new LdapAuthError('LDAP_ACCOUNT_DISABLED');
+  user.isActive = isAccountActive(user);
+  if (!user.isActive) {
+    throw new LdapAuthError('LDAP_ACCOUNT_NOT_ACTIVE');
   }
 
   return user;
@@ -121,7 +121,7 @@ export async function getLdapUserByLogin(login: string): Promise<User & AdUser> 
     throw new LdapAuthError('LDAP_USER_NOT_FOUND');
   }
 
-  user.isDisabled = isAccountDisabled(user);
+  user.isActive = isAccountActive(user);
 
   return user;
 }

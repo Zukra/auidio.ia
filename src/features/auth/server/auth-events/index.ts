@@ -3,7 +3,6 @@ export type {
   AuthEvent,
   AuthEventPublisher,
   AuthEventType,
-  AuthProfilePayload,
+  AuthUserSnapshot,
   AuthUserSyncedEvent,
-  AuthUserSyncedSnapshot,
 } from '@/features/auth/server/auth-events/types';

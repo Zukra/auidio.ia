@@ -4,10 +4,8 @@ import {
   DEFAULT_SESSION_MAX_AGE_SECONDS,
 } from '@/features/auth/config/constants';
 
-type RequiredServerSetting = {
-  name: 'NEXTAUTH_URL' | 'NEXTAUTH_SECRET' | 'AUTH_LDAP_SERVER_URI' | 'AUTH_LDAP_BASE_DN';
-  value: string;
-};
+type RequiredServerSetting =
+  'NEXTAUTH_URL' | 'NEXTAUTH_SECRET' | 'AUTH_LDAP_SERVER_URI' | 'AUTH_LDAP_BASE_DN';
 
 export type AuthSettings = {
   nextAuthUrl: string;
@@ -21,18 +19,8 @@ export type AuthSettings = {
   ldapRecheckIntervalSeconds: number;
 };
 
-function getRequiredServerSettings(): RequiredServerSetting[] {
-  return [
-    { name: 'NEXTAUTH_URL', value: process.env.NEXTAUTH_URL ?? '' },
-    { name: 'NEXTAUTH_SECRET', value: process.env.NEXTAUTH_SECRET ?? '' },
-    { name: 'AUTH_LDAP_SERVER_URI', value: process.env.AUTH_LDAP_SERVER_URI ?? '' },
-    { name: 'AUTH_LDAP_BASE_DN', value: process.env.AUTH_LDAP_BASE_DN ?? '' },
-  ];
-}
-
-function requireServerSetting(name: RequiredServerSetting['name']): string {
-  const item = getRequiredServerSettings().find((setting) => setting.name === name);
-  const value = item?.value.trim() ?? '';
+function requireServerSetting(name: RequiredServerSetting): string {
+  const value = process.env[name]?.trim() ?? '';
 
   if (!value) {
     throw new Error(`Missing environment variable: ${name}`);

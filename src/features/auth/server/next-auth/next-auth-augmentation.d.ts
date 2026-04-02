@@ -1,7 +1,6 @@
 import type { DefaultSession } from 'next-auth';
+import type { SessionErrorCode } from '@/features/auth/server/core';
 import type { AdUser } from '@/features/auth/server/ldap/types';
-
-type SessionErrorCode = 'SessionExpired' | 'LDAP_CONFIG_ERROR';
 
 declare module 'next-auth' {
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -10,6 +9,9 @@ declare module 'next-auth' {
   interface Session {
     user?: DefaultSession['user'] & User;
     error?: SessionErrorCode;
+    trigger?: string;
+    jti?: string;
+    exp?: number;
   }
 }
 
@@ -19,7 +21,6 @@ declare module 'next-auth/jwt' {
     trigger?: string;
     jti?: string;
     lastLdapValidationAt?: number;
-    lastKnownLdapActive?: boolean;
     error?: SessionErrorCode;
     exp?: number;
   }

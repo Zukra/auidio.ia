@@ -10,7 +10,7 @@ export type AdUser = {
   department: string | [];
   memberOf: Array<string | null>;
   manager: string | [];
-  isDisabled: boolean | null;
+  isActive: boolean;
 };
 
 export type LdapConfig = {

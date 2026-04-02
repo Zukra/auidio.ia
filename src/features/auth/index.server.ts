@@ -1,5 +1,6 @@
 export { authConfig } from '@/features/auth/server/next-auth/auth.config';
 export { auth } from '@/features/auth/server/next-auth/server';
+export type { SessionErrorCode } from '@/features/auth/server/core';
 export {
   ConsoleAuthEventPublisher,
   getAuthEventPublisher,

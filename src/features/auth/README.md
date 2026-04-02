@@ -15,15 +15,15 @@
 - `getLdapUserByLogin(login)` — серверная выборка пользователя для recheck.
 
 `getLdapUserByLogin`:
-- возвращает пользователя с заполненным `isDisabled`;
+- возвращает пользователя с заполненным `isActive`;
 - бросает `LDAP_USER_NOT_FOUND`, если пользователь не найден;
-- бросает `LDAP_ACCOUNT_DISABLED`, если учетная запись отключена.
+- бросает `LDAP_ACCOUNT_NOT_ACTIVE`, если учетная запись не активна.
 
 ## Auth Events
 
 Публикуемые события:
 - `auth.login` — каждый успешный вход.
-- `auth.user_synced` — изменение `displayName/mail/department/isActive`.
+- `auth.user_synced` — любое изменение snapshot пользователя (`previous/current`).
 - `auth.logout` — ручной выход пользователя.
 
 Режим публикации: `best-effort`.
@@ -70,4 +70,3 @@ export { handler as GET, handler as POST };
 - `AUTH_SESSION_MAX_AGE_SECONDS`
 - `AUTH_JWT_MAX_AGE_SECONDS`
 - `AUTH_LDAP_RECHECK_INTERVAL_SECONDS`
-

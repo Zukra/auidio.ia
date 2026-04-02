@@ -62,7 +62,7 @@ function mapSearchEntryToAdUser(entry: Entry): AdUser {
     department: toStringOrEmptyArray(record.department),
     memberOf: toNullableStringArray(record.memberOf),
     manager: toStringOrEmptyArray(record.manager),
-    isDisabled: null,
+    isActive: false,
   };
 }
 

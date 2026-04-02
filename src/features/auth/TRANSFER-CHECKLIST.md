@@ -35,11 +35,7 @@
 - `auth.user_synced`
 - `auth.logout`
 
-`auth.user_synced` содержит diff по:
-- `displayName`
-- `mail`
-- `department`
-- `isActive`
+`auth.user_synced` публикуется при любом изменении snapshot (`previous/current`).
 
 ## 6) ENV
 
@@ -64,4 +60,3 @@
   - изменения профиля/статуса публикуют `auth.user_synced`;
   - `isActive=false` приводит к `SessionExpired` и sign out.
 - `auth.logout` публикуется при ручном выходе.
-

@@ -41,6 +41,7 @@ Use `pnpm` (the repo includes `pnpm-lock.yaml`).
   - Pay attention to strict typing
   - Carefully analyze my files and requirements
   - Display information in an easy-to-read format
+  - Write the code for the person, as clear and visual as possible, without unnecessary complexity
   - Use the components ui.shadcn.com for the front-end
   - Use the next-auth.js for the auth ldap
 
