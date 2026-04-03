@@ -1,5 +1,5 @@
 import type { DefaultSession } from 'next-auth';
-import type { SessionErrorCode } from '@/features/auth/server/core';
+import type { LdapAuthErrorCode } from '@/features/auth/server/ldap';
 import type { AdUser } from '@/features/auth/server/ldap/types';
 
 declare module 'next-auth' {
@@ -8,7 +8,7 @@ declare module 'next-auth' {
 
   interface Session {
     user?: DefaultSession['user'] & User;
-    error?: SessionErrorCode;
+    error?: LdapAuthErrorCode;
     trigger?: string;
     jti?: string;
     exp?: number;
@@ -21,7 +21,7 @@ declare module 'next-auth/jwt' {
     trigger?: string;
     jti?: string;
     lastLdapValidationAt?: number;
-    error?: SessionErrorCode;
+    error?: LdapAuthErrorCode;
     exp?: number;
   }
 }

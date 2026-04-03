@@ -1,15 +1,40 @@
 import type { Session, User } from 'next-auth';
 import type { JWT } from 'next-auth/jwt';
 import { LdapAuthError, authenticateLdap, getLdapUserByLogin } from '@/features/auth/server/ldap';
-import type { AuthUserSnapshot } from '@/features/auth/server/auth-events';
-import { emitLoginEvent, emitLogoutEvent, emitUserSynced, emitUserUpdate } from '@/features/auth/server/core/events';
+import type { LdapAuthErrorCode } from '@/features/auth/server/ldap';
+import { getAuthEventPublisher } from '@/features/auth/server/auth-events';
+import type { AuthEvent, AuthUserSnapshot } from '@/features/auth/server/auth-events';
 import { isUserSyncedSnapshotChanged } from '@/features/auth/server/core/profile';
-import type { SessionErrorCode } from '@/features/auth/server/core/types';
 
 type SignOutMessage = {
   token?: { user?: { id?: string } };
   session?: { user?: { id?: string } };
 };
+
+function resolveLdapErrorCode(error: unknown): LdapAuthErrorCode {
+  if (error instanceof LdapAuthError) {
+    return error.code;
+  }
+
+  return 'SessionExpired';
+}
+
+async function emitAuthEvent(event: AuthEvent): Promise<void> {
+  try {
+    await getAuthEventPublisher().emit(event);
+  } catch (error) {
+    console.error('[auth-events] publish failed', { eventType: event.type, userId: event.userId, error });
+  }
+}
+
+function toAuthUserSnapshot(user: User): AuthUserSnapshot {
+  return {
+    displayName: user.displayName,
+    mail: user.mail,
+    department: user.department,
+    isActive: user.isActive,
+  };
+}
 
 export function isLdapRecheckDue(token: JWT, recheckIntervalSeconds: number): boolean {
   if (!token.lastLdapValidationAt) {
@@ -37,28 +62,21 @@ export async function handleAuthorize(credentials: { username?: string; password
   }
 }
 
-export async function applySignInToToken(params: {
-  token: JWT;
-  user: User;
-  nowSeconds: number;
-}): Promise<JWT> {
-  const { token, user, nowSeconds } = params;
+export async function applySignInToToken({ token, user, nowSeconds }: { token: JWT; user: User; nowSeconds: number; }): Promise<JWT> {
+  const profile = toAuthUserSnapshot(user);
 
-  await emitLoginEvent(user);
+  await emitAuthEvent({
+    type: 'auth.login',
+    userId: user.id,
+    occurredAt: new Date().toISOString(),
+    payload: { profile },
+  });
 
   token.user = user;
   token.error = undefined;
   token.lastLdapValidationAt = nowSeconds;
 
   return token;
-}
-
-function mapRecheckErrorCode(error: unknown): SessionErrorCode {
-  if (error instanceof LdapAuthError && error.code === 'LDAP_CONFIG_ERROR') {
-    return 'LDAP_CONFIG_ERROR';
-  }
-
-  return 'SessionExpired';
 }
 
 export async function applyLdapRecheckToToken(params: { token: JWT; nowSeconds: number; }): Promise<JWT> {
@@ -70,59 +88,57 @@ export async function applyLdapRecheckToToken(params: { token: JWT; nowSeconds: 
 
   try {
     const ldapUser = await getLdapUserByLogin(token.user.id);
-    const previousSnapshot: AuthUserSnapshot = {
-      displayName: token.user.displayName,
-      mail: token.user.mail,
-      department: token.user.department,
-      isActive: token.user.isActive,
-    };
-    const currentSnapshot: AuthUserSnapshot = {
-      displayName: ldapUser.displayName,
-      mail: ldapUser.mail,
-      department: ldapUser.department,
-      isActive: ldapUser.isActive,
-    };
+    const previousSnapshot = toAuthUserSnapshot(token.user);
+    const currentSnapshot = toAuthUserSnapshot(ldapUser);
 
-    // TODO compare & update user data
     if (isUserSyncedSnapshotChanged(previousSnapshot, currentSnapshot)) {
-      await emitUserSynced({
+      await emitAuthEvent({
+        type: 'auth.user_update',
         userId: token.user.id,
-        previous: previousSnapshot,
-        current: currentSnapshot,
-        source: 'ldap_recheck',
+        occurredAt: new Date().toISOString(),
+        payload: {
+          previous: previousSnapshot,
+          current: currentSnapshot,
+          source: 'ldap_recheck',
+        },
       });
     }
 
-    if (ldapUser.isActive) {
+    if (!ldapUser.isActive) {
+      token.user = undefined;
+      token.error = resolveLdapErrorCode(new LdapAuthError('LDAP_ACCOUNT_NOT_ACTIVE'));
+    } else {
       token.user = ldapUser;
       token.lastLdapValidationAt = nowSeconds;
-    } else {
-      token.user = undefined;
-      token.error = 'SessionExpired';
     }
 
     return token;
   } catch (error) {
-    const isInactiveError = error instanceof LdapAuthError
-      && (error.code === 'LDAP_ACCOUNT_NOT_ACTIVE' || error.code === 'LDAP_USER_NOT_FOUND');
+    // TODO убрать проверку на конкретную ошибку и обрывать сессию на любую ошибку?
+    const isUserNotFoundError = error instanceof LdapAuthError
+      && error.code === 'LDAP_USER_NOT_FOUND';
 
-    if (isInactiveError && token.user) {
-      const currentSnapshot: AuthUserSnapshot = {
-        displayName: token.user.displayName,
-        mail: token.user.mail,
-        department: token.user.department,
-        isActive: false,
-      };
+    if (isUserNotFoundError) {
+      if (token.user) {
+        const currentSnapshot: AuthUserSnapshot = {
+          ...toAuthUserSnapshot(token.user),
+          isActive: false,
+        };
 
-      await emitUserUpdate({
-        userId: token.user.id,
-        profile: currentSnapshot,
-        source: 'ldap_recheck',
-      });
+        await emitAuthEvent({
+          type: 'auth.user_update',
+          userId: token.user.id,
+          occurredAt: new Date().toISOString(),
+          payload: {
+            profile: currentSnapshot,
+            source: 'ldap_recheck',
+          },
+        });
+      }
     }
 
     token.user = undefined;
-    token.error = mapRecheckErrorCode(error);
+    token.error = resolveLdapErrorCode(error);
 
     return token;
   }
@@ -144,5 +160,10 @@ export async function handleSignOutEvent(message: SignOutMessage): Promise<void>
     return;
   }
 
-  await emitLogoutEvent(userId);
+  await emitAuthEvent({
+    type: 'auth.logout',
+    userId,
+    occurredAt: new Date().toISOString(),
+    payload: { reason: 'manual' },
+  });
 }

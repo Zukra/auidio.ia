@@ -1,7 +1,9 @@
 import NextAuth from 'next-auth';
 import { authConfig, ConsoleAuthEventPublisher, NoopAuthEventPublisher, setAuthEventPublisher } from '@/features/auth/index.server';
 
-setAuthEventPublisher(process.env.NODE_ENV === 'production' ? new NoopAuthEventPublisher() : new ConsoleAuthEventPublisher());
+setAuthEventPublisher(process.env.NODE_ENV === 'production'
+  ? new NoopAuthEventPublisher()
+  : new ConsoleAuthEventPublisher());
 
 const handler = NextAuth(authConfig);
 

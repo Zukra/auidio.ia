@@ -113,6 +113,7 @@ export async function getLdapUserByLogin(login: string): Promise<User & AdUser> 
     serviceCredentials.password,
     async ({ client, config }) => {
       const foundUser = await findUserByLogin(client, config.baseDn, normalizedLogin);
+
       return foundUser ? { id: foundUser.sAMAccountName, ...foundUser } : null;
     },
   ) as (User & AdUser) | null;

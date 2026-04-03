@@ -44,6 +44,8 @@ Use `pnpm` (the repo includes `pnpm-lock.yaml`).
   - Write the code for the person, as clear and visual as possible, without unnecessary complexity
   - Use the components ui.shadcn.com for the front-end
   - Use the next-auth.js for the auth ldap
+  - Don't create unnecessary abstractions and layers.
+  - The code should be as simple as possible, understandable to humans, transparent, and functional.
 
 ## 1) Структура репозитория
 ```txt
@@ -98,15 +100,3 @@ src/features/<domain>/
 4. **Общие UI-примитивы**: `src/components/ui`.
 5. **Общие доменно-независимые утилиты**: `src/lib`.
 6. **Публичные импорты фичи**: через `index.ts` внутри фичи.
-
-
-## Авторизация/события.
- - При успешном логине создаётся событие, по которому в БД записывается дата логина, имя, логин, статус "активен".
- - Периодически идёт проверка статуса пользователя в Ldap. Если пользователь неактивен
-вызывается событие обновления, при котором статус пользователя меняется на "не активен".
- - Так же событие обновления вызывается, если данные из Ldap не совпадают с текущими.
- - В процессе периодической проверки, если произошла ошибка, то вызывается событие и 
-выставляется статус пользователя "не активен".
- - Т.е., при любом событии на основе данных из Ldap пользователю через событие
- выставляется соответствующий статус. Статус "не активен" выставляется при периодической
- проверке, если была ошибка.

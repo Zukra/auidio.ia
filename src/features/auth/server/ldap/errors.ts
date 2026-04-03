@@ -4,7 +4,8 @@ export type LdapAuthErrorCode =
   | 'LDAP_USER_NOT_FOUND'
   | 'LDAP_ACCOUNT_NOT_ACTIVE'
   | 'LDAP_CONFIG_ERROR'
-  | 'LDAP_AUTH_FAILED';
+  | 'LDAP_AUTH_FAILED'
+  | 'SessionExpired';
 
 export class LdapAuthError extends Error {
   code: LdapAuthErrorCode;
