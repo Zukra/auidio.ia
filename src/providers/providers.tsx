@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { SessionProviderClient } from '@/features/auth/index.client';
-import { ThemeProvider } from '@/providers/theme-provider';
+import { ThemeProvider } from '@/features/theme/theme-provider';
 
 type AppProvidersProps = {
   children: ReactNode;
@@ -11,12 +11,7 @@ type AppProvidersProps = {
 export function AppProviders({ children }: AppProvidersProps) {
   return (
     <SessionProviderClient>
-      <ThemeProvider
-        attribute='class'
-        defaultTheme='system'
-        enableSystem
-        disableTransitionOnChange
-      >
+      <ThemeProvider>
         {children}
       </ThemeProvider>
     </SessionProviderClient>

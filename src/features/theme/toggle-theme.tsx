@@ -7,7 +7,7 @@ import { useTheme } from 'next-themes';
 
 type ThemeName = 'light' | 'dark' | 'system';
 
-export const ThemeMenu = () => {
+export const ToggleTheme = () => {
   const { setTheme } = useTheme();
 
   const items: { value: ThemeName; label: string; icon: ReactNode }[] = [
