@@ -10,8 +10,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.6.0",
+    "@prisma/client": "^7.6.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.4.1",
     "ldapts": "^8.1.7",
     "lucide-react": "^0.577.0",
     "next": "16.1.7",
@@ -26,11 +29,13 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.2",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.1.7",
+    "prisma": "^7.6.0",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3"
   }
