@@ -13,15 +13,13 @@ datasource db {
 }
 
 model User {
-  id            String          @id @default(cuid())
-  account       String          @unique
-  email         String?         @unique
-  name          String?
-  shortName     String?         @map("short_name")
-  active        Boolean         @default(false)
-
-  // createdAt DateTime @default(now())
-  updatedAt     DateTime        @default(now())     @map("updated_at")
+  id        Int      @id @default(autoincrement())
+  account   String   @unique
+  email     String?  @unique
+  name      String?
+  shortName String?  @map("short_name")
+  active    Boolean  @default(false)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("users")
 }
