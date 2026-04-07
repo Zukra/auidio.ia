@@ -1,9 +1,9 @@
 import NextAuth from 'next-auth';
-import { authConfig, ConsoleAuthEventPublisher, NoopAuthEventPublisher, setAuthEventPublisher } from '@/features/auth/index.server';
+import { authConfig, setAuthEventPublisher } from '@/features/auth/index.server';
+import { PrismaAuthEventPublisher } from '@/server/auth-events/prisma-auth-event-publisher';
 
-setAuthEventPublisher(process.env.NODE_ENV === 'production'
-  ? new NoopAuthEventPublisher()
-  : new ConsoleAuthEventPublisher());
+// setAuthEventPublisher(process.env.NODE_ENV === 'production' ? new PrismaAuthEventPublisher() : new ConsoleAuthEventPublisher());
+setAuthEventPublisher(new PrismaAuthEventPublisher());
 
 const handler = NextAuth(authConfig);
 
