@@ -19,19 +19,39 @@ function resolveLdapErrorCode(error: unknown): LdapAuthErrorCode {
   return 'SessionExpired';
 }
 
+function resolvePublishErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return String(error);
+}
+
+function applyPublishErrorToToken(token: JWT, error: unknown): JWT {
+  token.user = undefined;
+  token.error = resolvePublishErrorMessage(error);
+  token.lastLdapValidationAt = undefined;
+
+  return token;
+}
+
 async function emitAuthEvent(event: AuthEvent): Promise<void> {
   try {
     await getAuthEventPublisher().emit(event);
+
+    return;
   } catch (error) {
     console.error('[auth-events] publish failed', { eventType: event.type, userId: event.userId, error });
+
+    throw error;
   }
 }
 
 function toAuthUserSnapshot(user: User): AuthUserSnapshot {
   return {
     displayName: user.displayName,
+    cn: user.cn,
     mail: user.mail,
-    department: user.department,
     isActive: user.isActive,
   };
 }
@@ -65,12 +85,16 @@ export async function handleAuthorize(credentials: { username?: string; password
 export async function applySignInToToken({ token, user, nowSeconds }: { token: JWT; user: User; nowSeconds: number; }): Promise<JWT> {
   const profile = toAuthUserSnapshot(user);
 
-  await emitAuthEvent({
-    type: 'auth.login',
-    userId: user.id,
-    occurredAt: new Date().toISOString(),
-    payload: { profile },
-  });
+  try {
+    await emitAuthEvent({
+      type: 'auth.login',
+      userId: user.id,
+      occurredAt: new Date().toISOString(),
+      payload: { profile },
+    });
+  } catch (error) {
+    return applyPublishErrorToToken(token, error);
+  }
 
   token.user = user;
   token.error = undefined;
@@ -92,16 +116,19 @@ export async function applyLdapRecheckToToken(params: { token: JWT; nowSeconds: 
     const currentSnapshot = toAuthUserSnapshot(ldapUser);
 
     if (isUserSyncedSnapshotChanged(previousSnapshot, currentSnapshot)) {
-      await emitAuthEvent({
-        type: 'auth.user_update',
-        userId: token.user.id,
-        occurredAt: new Date().toISOString(),
-        payload: {
-          previous: previousSnapshot,
-          current: currentSnapshot,
-          source: 'ldap_recheck',
-        },
-      });
+      try {
+        await emitAuthEvent({
+          type: 'auth.user_update',
+          userId: token.user.id,
+          occurredAt: new Date().toISOString(),
+          payload: {
+            profile: currentSnapshot,
+            source: 'ldap_recheck',
+          },
+        });
+      } catch (error) {
+        return applyPublishErrorToToken(token, error);
+      }
     }
 
     if (!ldapUser.isActive) {
@@ -125,15 +152,19 @@ export async function applyLdapRecheckToToken(params: { token: JWT; nowSeconds: 
           isActive: false,
         };
 
-        await emitAuthEvent({
-          type: 'auth.user_update',
-          userId: token.user.id,
-          occurredAt: new Date().toISOString(),
-          payload: {
-            profile: currentSnapshot,
-            source: 'ldap_recheck',
-          },
-        });
+        try {
+          await emitAuthEvent({
+            type: 'auth.user_update',
+            userId: token.user.id,
+            occurredAt: new Date().toISOString(),
+            payload: {
+              profile: currentSnapshot,
+              source: 'ldap_recheck',
+            },
+          });
+        } catch (publishError) {
+          token.error = resolvePublishErrorMessage(publishError);
+        }
       }
     }
 

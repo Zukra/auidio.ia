@@ -8,7 +8,7 @@ export function isUserSyncedSnapshotChanged(
 ): boolean {
   return normalizeComparableValue(previous.displayName) !== normalizeComparableValue(current.displayName)
     || normalizeComparableValue(previous.mail) !== normalizeComparableValue(current.mail)
-    || normalizeComparableValue(previous.department) !== normalizeComparableValue(current.department)
+    || normalizeComparableValue(previous.cn) !== normalizeComparableValue(current.cn)
     || previous.isActive !== current.isActive;
 }
 

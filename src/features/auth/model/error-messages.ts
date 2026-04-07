@@ -26,7 +26,7 @@ export function getAuthErrorMessage(errorCode: string | null): string | null {
     return null;
   }
 
-  return ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.Default;
+  return ERROR_MESSAGES[errorCode] ?? errorCode;
 }
 
 /* const AUTH_ERROR_MESSAGES: Record<string, string> = {
