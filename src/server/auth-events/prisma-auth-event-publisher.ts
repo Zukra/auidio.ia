@@ -1,6 +1,6 @@
 import type { AuthEvent, AuthEventPublisher } from '@/features/auth/server/auth-events';
-import type { Prisma } from '@/app/generated/prisma/client';
-import { prisma } from '@/server/db/prisma';
+import type { Prisma } from '@/db/generated/prisma/client';
+import { prisma } from '@/db/prisma';
 
 export class PrismaAuthEventPublisher implements AuthEventPublisher {
   public async emit(event: AuthEvent): Promise<void> {
