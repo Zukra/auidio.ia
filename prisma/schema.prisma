@@ -14,10 +14,10 @@ datasource db {
 
 model User {
   id        Int      @id @default(autoincrement())
-  account   String   @unique
+  adGuid    String   @unique @map("ad_guid")
+  adLogin   String   @unique @map("ad_login")
   email     String?  @unique
-  name      String?
-  shortName String?  @map("short_name")
+  fullName  String?  @map("full_name")
   active    Boolean  @default(false)
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
