@@ -1,4 +1,5 @@
 import type { AuthEvent, AuthEventPublisher } from '@/features/auth/server/auth-events';
+import type { Prisma } from '@/app/generated/prisma/client';
 import { prisma } from '@/server/db/prisma';
 
 export class PrismaAuthEventPublisher implements AuthEventPublisher {
@@ -34,17 +35,20 @@ export class PrismaAuthEventPublisher implements AuthEventPublisher {
     }
 
     const data = {
+      adGuid: event.adGuid,
       email: profile.mail ?? null,
-      name: profile.displayName ?? '',
-      shortName: profile.cn ?? profile.displayName,
+      fullName: profile.displayName ?? '',
       active: profile.isActive ?? false,
     } as Record<string, unknown>;
 
     try {
+      const createData = { ...data, adLogin: event.userId } as unknown as Prisma.UserCreateInput;
+      const updateData = data as unknown as Prisma.UserUpdateInput;
+
       await prisma.user.upsert({
-        where: { account: event.userId },
-        create: { ...data, ...{ account: event.userId } },
-        update: data,
+        where: { adLogin: event.userId },
+        create: createData,
+        update: updateData,
       });
 
     } catch {

@@ -1,5 +1,6 @@
 import type { Client, Entry } from 'ldapts';
 import type { AdUser } from '@/features/auth/server/ldap/types';
+import { bufferToStr } from '@/features/auth/server/ldap/helpers';
 
 const LDAP_ATTRIBUTES = [
   'cn',
@@ -19,6 +20,17 @@ function toRecord(entry: Entry): Record<string, unknown> {
 }
 
 function toStringValue(value: unknown): string {
+  if (Buffer.isBuffer(value)) {
+    return bufferToStr(value);
+  } else if (typeof value === 'string' && value.toLowerCase().includes('buffer')) {
+    // если приходит строка "<Buffer ...>"
+    const s = String(value);
+    const hex = s.replace(/<Buffer\s*|\s*>/g, '').replace(/\s+/g, '');
+    const buf = Buffer.from(hex, 'hex');
+
+    return bufferToStr(buf);
+  }
+
   if (typeof value === 'string') {
     return value;
   }
@@ -59,7 +71,7 @@ function mapSearchEntryToAdUser(entry: Entry): AdUser {
     sAMAccountName: toStringValue(record.sAMAccountName),
     mail: toStringValue(record.mail),
     employeeType: toStringOrEmptyArray(record.employeeType),
-    department: toStringOrEmptyArray(record.department),
+    department: toStringValue(record.department),
     memberOf: toNullableStringArray(record.memberOf),
     manager: toStringOrEmptyArray(record.manager),
     isActive: false,

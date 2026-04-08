@@ -36,7 +36,7 @@ Use `pnpm` (the repo includes `pnpm-lock.yaml`).
   - If task is unclear ask clarifying questions
   - Always follow SOLID and KISS principles
   - Answer in Russian
-  - Think like a senior developer
+  - Think like a middle developer
   - Apply the best best solutions and practices of code and UX/UT at the moment
   - Pay attention to strict typing
   - Carefully analyze my files and requirements

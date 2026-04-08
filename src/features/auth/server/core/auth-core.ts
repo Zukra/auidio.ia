@@ -7,8 +7,8 @@ import type { AuthEvent, AuthUserSnapshot } from '@/features/auth/server/auth-ev
 import { isUserSyncedSnapshotChanged } from '@/features/auth/server/core/profile';
 
 type SignOutMessage = {
-  token?: { user?: { id?: string } };
-  session?: { user?: { id?: string } };
+  token?: { user?: { id?: string, objectGUID?: string } };
+  session?: { user?: { id?: string, objectGUID?: string } };
 };
 
 function resolveLdapErrorCode(error: unknown): LdapAuthErrorCode {
@@ -89,6 +89,7 @@ export async function applySignInToToken({ token, user, nowSeconds }: { token: J
     await emitAuthEvent({
       type: 'auth.login',
       userId: user.id,
+      adGuid: user.objectGUID,
       occurredAt: new Date().toISOString(),
       payload: { profile },
     });
@@ -120,6 +121,7 @@ export async function applyLdapRecheckToToken(params: { token: JWT; nowSeconds: 
         await emitAuthEvent({
           type: 'auth.user_update',
           userId: token.user.id,
+          adGuid: token.user.objectGUID,
           occurredAt: new Date().toISOString(),
           payload: {
             profile: currentSnapshot,
@@ -156,6 +158,7 @@ export async function applyLdapRecheckToToken(params: { token: JWT; nowSeconds: 
           await emitAuthEvent({
             type: 'auth.user_update',
             userId: token.user.id,
+            adGuid: token.user.objectGUID,
             occurredAt: new Date().toISOString(),
             payload: {
               profile: currentSnapshot,
@@ -186,14 +189,16 @@ export function buildSession(session: Session, token: JWT): Session {
 
 export async function handleSignOutEvent(message: SignOutMessage): Promise<void> {
   const userId = message.token?.user?.id ?? message.session?.user?.id;
+  const adGuid = message.token?.user?.objectGUID ?? message.session?.user?.objectGUID;
 
-  if (!userId) {
+  if (!userId || !adGuid) {
     return;
   }
 
   await emitAuthEvent({
     type: 'auth.logout',
     userId,
+    adGuid,
     occurredAt: new Date().toISOString(),
     payload: { reason: 'manual' },
   });

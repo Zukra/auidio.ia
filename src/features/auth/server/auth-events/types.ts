@@ -7,6 +7,7 @@ export type AuthEventType = 'auth.login' | 'auth.logout' | 'auth.user_update';
 export type AuthEvent = {
   type: AuthEventType;
   userId: string;
+  adGuid: string;
   occurredAt: string;
   payload: Record<string, unknown>;
 };
