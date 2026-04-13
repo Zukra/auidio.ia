@@ -34,23 +34,24 @@ export class PrismaAuthEventPublisher implements AuthEventPublisher {
       return;
     }
 
-    const data = {
+    const updateData = {
       adGuid: event.adGuid,
-      email: profile.mail ?? null,
-      fullName: profile.displayName ?? '',
-      active: profile.isActive ?? false,
-    } as Record<string, unknown>;
+      email: (profile.mail as string | null | undefined) ?? null,
+      fullName: (profile.displayName as string | null | undefined) ?? null,
+      active: (profile.isActive as boolean | undefined) ?? false,
+    } satisfies Prisma.UserUpdateInput;
+
+    const createData = {
+      adLogin: event.userId,
+      ...updateData,
+    } satisfies Prisma.UserCreateInput;
 
     try {
-      const createData = { ...data, adLogin: event.userId } as unknown as Prisma.UserCreateInput;
-      const updateData = data as unknown as Prisma.UserUpdateInput;
-
       await prisma.user.upsert({
         where: { adLogin: event.userId },
         create: createData,
         update: updateData,
       });
-
     } catch {
       throw new Error('Ошибка обновления данных пользователя');
     }

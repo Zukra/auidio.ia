@@ -4,7 +4,7 @@ import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
 export default defineConfig({
-  schema: "src/db/prisma/schema.prisma",
+  schema: "src/db/prisma",
   migrations: {
     path: "src/db/prisma/migrations",
     // seed: 'tsx prisma/seed.ts',
