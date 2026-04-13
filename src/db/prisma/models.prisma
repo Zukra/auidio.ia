@@ -6,6 +6,49 @@ model User {
   fullName  String?  @map("full_name")
   active    Boolean  @default(false)
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  tasks     Task[]
 
   @@map("users")
+}
+
+model Task {
+  id           Int       @id @default(autoincrement())
+  userId       Int       @map("user_id")
+  name         String
+  taskType     String    @map("task_type")
+  status       String
+  createdAt    DateTime  @map("created_at")
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at")
+  errorMessage String?   @map("error_message")
+  user         User      @relation(fields: [userId], references: [id])
+  steps        TaskStep[]
+  results      TaskResult[]
+
+  @@index([userId], map: "tasks_user_id_idx")
+  @@map("tasks")
+}
+
+model TaskStep {
+  id        Int      @id @default(autoincrement())
+  taskId    Int      @map("task_id")
+  stepName  String   @map("step_name")
+  status    String
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  task      Task     @relation(fields: [taskId], references: [id])
+
+  @@index([taskId], map: "task_steps_task_id_idx")
+  @@unique([taskId, stepName], map: "task_steps_task_id_step_name_key")
+  @@map("task_steps")
+}
+
+model TaskResult {
+  id        Int      @id @default(autoincrement())
+  file      String
+  result    String
+  taskId    Int      @map("task_id")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  task      Task     @relation(fields: [taskId], references: [id])
+
+  @@index([taskId], map: "tasks_result_task_id_idx")
+  @@map("tasks_result")
 }
