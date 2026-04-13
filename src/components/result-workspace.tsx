@@ -7,7 +7,15 @@ import { Copy, Waves } from 'lucide-react';
 
 import { OutputBox } from '@/components/output-box';
 import { ProcessStepRow } from '@/components/process-step-row';
-import type { ExecutionState, ProcessingStep } from '@/types';
+import type { ApiRecord, ExecutionState, ProcessingStep } from '@/types';
+
+function toRecord(value: unknown): ApiRecord {
+  return value && typeof value === 'object' ? value as ApiRecord : {};
+}
+
+function toStringValue(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
 
 type ResultWorkspaceProps = {
   execution: ExecutionState;
@@ -16,9 +24,13 @@ type ResultWorkspaceProps = {
 
 export const ResultWorkspace = ({ execution, steps }: ResultWorkspaceProps) => {
   const [activeTab, setActiveTab] = useState('result');
+  const responseRecord = toRecord(execution.response);
+  const detailsRecord = toRecord(responseRecord.details);
+  const requestId = toStringValue(responseRecord.requestId);
+  const resultText = toStringValue(responseRecord.result);
 
-  const details = execution.response?.details
-    ? JSON.stringify(execution.response.details, null, 2)
+  const details = execution.response
+    ? JSON.stringify(detailsRecord, null, 2)
     : execution.status === 'error'
       ? JSON.stringify({ status: 'error', message: execution.errorMessage }, null, 2)
       : '{\n  "status": "idle"\n}';
@@ -71,7 +83,7 @@ export const ResultWorkspace = ({ execution, steps }: ResultWorkspaceProps) => {
                 variant="ghost"
                 size="icon"
                 className="rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-500 dark:hover:bg-white/[0.05] dark:hover:text-white"
-                onClick={() => navigator.clipboard.writeText(activeTab === 'result' ? execution.response?.result ?? '' : details)}
+                onClick={() => navigator.clipboard.writeText(activeTab === 'result' ? resultText : details)}
               >
                 <Copy className="size-4" />
               </Button>
@@ -80,14 +92,14 @@ export const ResultWorkspace = ({ execution, steps }: ResultWorkspaceProps) => {
             <TabsContent value="result" className="mt-0 flex-1">
               <OutputBox>
                 <p className="mb-3 text-sm text-slate-500 dark:text-zinc-500">
-                  {execution.response?.requestId ?? 'Ожидание запуска задачи'}
+                  {requestId || 'Ожидание запуска задачи'}
                 </p>
                 <p className="leading-8 text-slate-800 dark:text-zinc-100">
                   {execution.status === 'processing'
-                    ? execution.response?.result ?? 'Идет потоковая обработка через API. Статусы шагов и итоговый результат появятся по мере поступления событий.'
+                    ? resultText || 'Идет потоковая обработка через API. Статусы шагов и итоговый результат появятся по мере поступления событий.'
                     : execution.status === 'error'
                       ? execution.errorMessage ?? 'Во время обработки произошла ошибка.'
-                      : execution.response?.result ?? 'Загрузите файл и нажмите "Выполнить", чтобы увидеть итоговый результат обработки.'}
+                      : resultText || 'Загрузите файл и нажмите "Выполнить", чтобы увидеть итоговый результат обработки.'}
                 </p>
               </OutputBox>
             </TabsContent>

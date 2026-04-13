@@ -5,9 +5,34 @@ import { Header } from '@/components/header';
 import { FormPanel } from '@/components/form-panel';
 import { HistoryDetails } from '@/components/history-details';
 import { ResultWorkspace } from '@/components/result-workspace';
-import type { AudioProcessResponse, AudioProcessStreamEvent, ExecutionState, FormRunPayload, HistoryItem, LaunchMode, ProcessingStep } from '@/types';
+import type { ApiRecord, ExecutionState, FormRunPayload, HistoryItem, LaunchMode, ProcessingStep } from '@/types';
 
 import './audio-task-page.module.css';
+
+function toRecord(value: unknown): ApiRecord {
+  return value && typeof value === 'object' ? value as ApiRecord : {};
+}
+
+function toStringValue(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+function toNumberValue(value: unknown): number | undefined {
+  return typeof value === 'number' ? value : undefined;
+}
+
+function toStep(value: unknown): ProcessingStep | null {
+  const record = toRecord(value);
+  const id = toStringValue(record.id);
+  const title = toStringValue(record.title);
+  const status = toStringValue(record.status);
+
+  if (!id || !title || (status !== 'idle' && status !== 'running' && status !== 'success' && status !== 'error')) {
+    return null;
+  }
+
+  return { id, title, status };
+}
 
 export function AudioTaskPage() {
   const [steps, setSteps] = useState<ProcessingStep[]>([]);
@@ -62,7 +87,7 @@ export function AudioTaskPage() {
       const response = await fetch('/api/workflows/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...payload, ...{file: upload} }),
         signal: abortController.signal,
       });
 
@@ -74,40 +99,52 @@ export function AudioTaskPage() {
       const decoder = new TextDecoder();
       let buffer = '';
       let requestId = '';
-      let details: AudioProcessResponse['details'] | null = null;
+      let details: ApiRecord | null = null;
       let resultText = '';
       let currentSteps: ProcessingStep[] = [];
+      const payloadRecord = toRecord(payload);
+      const payloadInputs = toRecord(payloadRecord.inputs);
+      const payloadAudioFile = toRecord(payloadInputs.audio_file);
+      const uploadRecord = toRecord(upload);
 
       const applyStepUpdate = (step: ProcessingStep) => {
         const hasStep = currentSteps.some((current) => current.id === step.id);
         if (!hasStep) {
           currentSteps = [...currentSteps, step];
+
           return;
         }
 
         currentSteps = currentSteps.map((current) => current.id === step.id ? step : current);
       };
 
-      const processEvent = (event: AudioProcessStreamEvent) => {
+      const processEvent = (event: ApiRecord) => {
         if (runIdRef.current !== currentRun) {
           return;
         }
 
-        if (event.type === 'workflow_started') {
-          requestId = event.requestId;
+        const eventType = toStringValue(event.type);
+
+        if (eventType === 'workflow_started') {
+          requestId = toStringValue(event.requestId);
+
           return;
         }
 
-        if (event.type === 'step_update') {
-          applyStepUpdate(event.step);
+        if (eventType === 'step_update') {
+          const nextStep = toStep(event.step);
+          if (!nextStep) {
+            return;
+          }
+          applyStepUpdate(nextStep);
           setSteps([...currentSteps]);
 
           return;
         }
 
-        if (event.type === 'result') {
-          resultText = event.result;
-          details = event.details;
+        if (eventType === 'result') {
+          resultText = toStringValue(event.result);
+          details = toRecord(event.details);
           setExecution({
             status: 'processing',
             response: {
@@ -121,19 +158,23 @@ export function AudioTaskPage() {
           return;
         }
 
-        if (event.type === 'workflow_completed') {
+        if (eventType === 'workflow_completed') {
+          const uploadName = toStringValue(uploadRecord.name);
+          const uploadSize = toNumberValue(uploadRecord.size);
+          const payloadUploadFileId = toStringValue(payloadAudioFile.upload_file_id);
+
           setExecution({
             status: 'completed',
             response: {
-              requestId: event.requestId || requestId,
+              requestId: toStringValue(event.requestId) || requestId,
               steps: currentSteps,
               result: resultText,
               details: details ?? {
-                taskType: payload.inputs.type_task,
-                callbackUrl: payload.inputs.callback_url,
-                userId: payload.inputs.user_id,
-                fileName: upload.name || `upload:${payload.inputs.audio_file.upload_file_id}`,
-                fileSizeKb: upload.size ? Math.round(upload.size / 1024) : undefined,
+                taskType: toStringValue(payloadInputs.task_type),
+                callbackUrl: toStringValue(payloadInputs.callback_url),
+                userId: toStringValue(payloadInputs.user_id),
+                fileName: uploadName || `upload:${payloadUploadFileId}`,
+                fileSizeKb: uploadSize ? Math.round(uploadSize / 1024) : undefined,
                 finishedAt: new Date().toISOString(),
               },
             },
@@ -142,8 +183,8 @@ export function AudioTaskPage() {
           return;
         }
 
-        if (event.type === 'error') {
-          throw new Error(event.message);
+        if (eventType === 'error') {
+          throw new Error(toStringValue(event.message) || 'Ошибка при обработке файла');
         }
       };
 
@@ -162,12 +203,12 @@ export function AudioTaskPage() {
             continue;
           }
 
-          processEvent(JSON.parse(line) as AudioProcessStreamEvent);
+          processEvent(toRecord(JSON.parse(line) as unknown));
         }
       }
 
       if (buffer.trim()) {
-        processEvent(JSON.parse(buffer) as AudioProcessStreamEvent);
+        processEvent(toRecord(JSON.parse(buffer) as unknown));
       }
     } catch (error) {
       if (abortController.signal.aborted || runIdRef.current !== currentRun) {
@@ -179,6 +220,7 @@ export function AudioTaskPage() {
         response: null,
         errorMessage: error instanceof Error ? error.message : 'Ошибка при обработке файла',
       });
+
       setSteps((current) => current.map((step) => step.status === 'running' ? { ...step, status: 'error' } : step));
     }
   }, []);

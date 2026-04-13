@@ -55,6 +55,7 @@ project-app/
     app/                     # Next.js App Router: страницы, layout, API-роуты (BFF)
       api/                   # серверные route handlers, проксирующие backend API
     features/                # доменные модули (feature-first)
+    db/                      # модели таблиц, миграции
     components/              # переиспользуемые компоненты UI/лейаута
       ui/                    # базовые UI-примитивы (button, input, dialog, table и т.д.)
     providers/               # глобальные React providers (auth/query/theme/layout)
