@@ -43,6 +43,11 @@ export type HistoryResultItem = {
   updatedAt: string;
 };
 
+export type HistorySelection = {
+  taskId: number;
+  resultId: number;
+};
+
 export type HistoryTaskItem = {
   id: number;
   userId: number;
@@ -53,15 +58,6 @@ export type HistoryTaskItem = {
   updatedAt: string;
   errorMessage: string | null;
   results: HistoryResultItem[];
-};
-
-export type HistoryItem = {
-  id: string;
-  requestId: string;
-  fileName: string;
-  processedAt: string;
-  taskType: TaskType;
-  result: string;
 };
 
 export type ExecutionState = {

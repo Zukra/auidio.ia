@@ -5,6 +5,7 @@ import { Header } from '@/components/header';
 import { FormPanel } from '@/components/form-panel';
 import { HistoryDetails } from '@/components/history-details';
 import { ResultWorkspace } from '@/components/result-workspace';
+import { useHistoryTasks } from '@/hooks/use-history-tasks';
 import type { ApiRecord, ExecutionState, FormRunPayload, LaunchMode, ProcessingStep } from '@/types';
 
 import './audio-task-page.module.css';
@@ -38,13 +39,19 @@ export function AudioTaskPage() {
   const [steps, setSteps] = useState<ProcessingStep[]>([]);
   const [execution, setExecution] = useState<ExecutionState>({ status: 'idle', response: null });
   const [launchMode, setLaunchMode] = useState<LaunchMode>('single');
-  const [selectedHistoryItemId, setSelectedHistoryItemId] = useState<string | null>(null);
   const runIdRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
-
-  const handleHistorySelect = useCallback((historyItemId: string) => {
-    setSelectedHistoryItemId(historyItemId);
-  }, []);
+  const {
+    items: historyItems,
+    isLoading: isHistoryLoading,
+    errorMessage: historyErrorMessage,
+    selectedHistorySelection,
+    selectHistory,
+    selectedHistoryTask,
+    selectedHistoryResult,
+    isDetailsLoading: isHistoryDetailsLoading,
+    detailsErrorMessage: historyDetailsErrorMessage,
+  } = useHistoryTasks();
 
   const handleRun = useCallback(async ({ payload, upload }: FormRunPayload) => {
     runIdRef.current += 1;
@@ -199,24 +206,32 @@ export function AudioTaskPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.12),_transparent_34%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_52%,#f8fafc_100%)] text-slate-900 dark:bg-[radial-gradient(circle_at_top,_rgba(58,95,104,0.22),_transparent_30%),linear-gradient(180deg,rgba(9,12,19,1)_0%,rgba(14,16,26,1)_100%)] dark:text-foreground">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1440px] flex-col gap-2 px-4 py-4">
+    <div className="h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.12),_transparent_34%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_52%,#f8fafc_100%)] text-slate-900 dark:bg-[radial-gradient(circle_at_top,_rgba(58,95,104,0.22),_transparent_30%),linear-gradient(180deg,rgba(9,12,19,1)_0%,rgba(14,16,26,1)_100%)] dark:text-foreground">
+      <div className="mx-auto flex h-full w-full max-w-[1440px] flex-col gap-2 px-4 py-4">
 
         <Header />
 
-        <main className="grid flex-1 gap-2 md:grid-cols-[minmax(320px,0.85fr)_minmax(0,1.15fr)] xl:grid-cols-[minmax(320px,520px)_minmax(0,1fr)]">
+        <main className="grid min-h-0 flex-1 gap-2 md:grid-cols-[minmax(320px,0.85fr)_minmax(0,1.15fr)] xl:grid-cols-[minmax(320px,520px)_minmax(0,1fr)]">
           <FormPanel
             onRun={handleRun}
             isProcessing={execution.status === 'processing'}
             launchMode={launchMode}
             onLaunchModeChange={setLaunchMode}
-            selectedHistoryItemId={selectedHistoryItemId}
-            onHistorySelect={handleHistorySelect}
+            historyItems={historyItems}
+            isHistoryLoading={isHistoryLoading}
+            historyErrorMessage={historyErrorMessage}
+            selectedHistorySelection={selectedHistorySelection}
+            onHistorySelect={selectHistory}
           />
 
           {launchMode === 'history'
             ? (
-              <HistoryDetails selectedHistoryItemId={selectedHistoryItemId} />
+              <HistoryDetails
+                historyTask={selectedHistoryTask}
+                historyResult={selectedHistoryResult}
+                isLoading={isHistoryDetailsLoading}
+                errorMessage={historyDetailsErrorMessage}
+              />
             )
             : (
               <ResultWorkspace execution={execution} steps={steps} />

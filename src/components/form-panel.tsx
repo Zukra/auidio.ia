@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { AudioProcessRequest, FormRunPayload, LaunchMode } from '@/types';
+import type { AudioProcessRequest, FormRunPayload, HistorySelection, HistoryTaskItem, LaunchMode } from '@/types';
 import { History } from '@/components/history';
 import { SingleFile } from '@/components/single-file';
 
@@ -18,8 +18,11 @@ type FormPanelProps = {
   initialValue?: Partial<AudioProcessRequest>;
   launchMode: LaunchMode;
   onLaunchModeChange: (value: LaunchMode) => void;
-  selectedHistoryItemId: string | null;
-  onHistorySelect: (historyItemId: string) => void;
+  historyItems: HistoryTaskItem[];
+  isHistoryLoading: boolean;
+  historyErrorMessage: string;
+  selectedHistorySelection: HistorySelection | null;
+  onHistorySelect: (selection: HistorySelection) => void;
 };
 
 export const FormPanel = ({
@@ -28,13 +31,16 @@ export const FormPanel = ({
   initialValue,
   launchMode,
   onLaunchModeChange,
-  selectedHistoryItemId,
+  historyItems,
+  isHistoryLoading,
+  historyErrorMessage,
+  selectedHistorySelection,
   onHistorySelect,
 }: FormPanelProps) => {
   return (
-    <Card className="w-full min-w-0 border-slate-200/80 bg-white/70 dark:border-white/8 dark:bg-white/[0.025]">
+    <Card className="h-full min-h-0 w-full min-w-0 border-slate-200/80 bg-white/70 dark:border-white/8 dark:bg-white/[0.025]">
       <CardContent className="flex h-full flex-col gap-6 p-4">
-        <Tabs value={launchMode} onValueChange={(value) => onLaunchModeChange(value as LaunchMode)} className="gap-6">
+        <Tabs value={launchMode} onValueChange={(value) => onLaunchModeChange(value as LaunchMode)} className="min-h-0 flex-1 gap-6">
           <TabsList variant="line" className="">
             {launchModes.map((mode) => (
               <TabsTrigger key={mode.value} value={mode.value} className="">
@@ -43,7 +49,7 @@ export const FormPanel = ({
             ))}
           </TabsList>
 
-          <TabsContent value={launchModes[0].value} className="mt-0 flex-1">
+          <TabsContent value={launchModes[0].value} forceMount className="mt-0 min-h-0 flex-1">
             <SingleFile
               onRun={onRun}
               isProcessing={isProcessing}
@@ -51,7 +57,7 @@ export const FormPanel = ({
             />
           </TabsContent>
 
-          <TabsContent value={launchModes[1].value} className="mt-0 flex-1">
+          <TabsContent value={launchModes[1].value} className="mt-0 min-h-0 flex-1">
             <div className="flex p-6">
               <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
                 <div>
@@ -83,9 +89,12 @@ export const FormPanel = ({
             </div>
           </TabsContent>
 
-          <TabsContent value={launchModes[2].value} className="mt-0 flex-1">
+          <TabsContent value={launchModes[2].value} className="mt-0 min-h-0 flex-1">
             <History
-              selectedHistoryItemId={selectedHistoryItemId}
+              items={historyItems}
+              isLoading={isHistoryLoading}
+              errorMessage={historyErrorMessage}
+              selectedHistorySelection={selectedHistorySelection}
               onSelect={onHistorySelect}
             />
           </TabsContent>
