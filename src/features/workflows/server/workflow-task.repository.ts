@@ -1,4 +1,5 @@
 import { prisma } from '@/db/prisma';
+import type { Session } from 'next-auth';
 
 type CreateTaskParams = {
   userId: number;
@@ -59,6 +60,83 @@ export async function createTaskResult(params: CreateTaskResultParams): Promise<
       taskId: params.taskId,
       file: params.file,
       result: params.result,
+    },
+  });
+}
+
+function getSessionUserId(session: Session | null | undefined): string | null {
+  const userId = session?.user?.id;
+
+  return typeof userId === 'string' && userId.length > 0 ? userId : null;
+}
+
+function parseTaskId(value: unknown): number | null {
+  if (typeof value === 'number') {
+    return Number.isInteger(value) && value > 0 ? value : null;
+  }
+
+  if (typeof value === 'string') {
+    const id = Number.parseInt(value, 10);
+
+    return Number.isInteger(id) && id > 0 ? id : null;
+  }
+
+  return null;
+}
+
+export async function getUserHistory(data: Record<string, unknown>) {
+  const session = data.session as Session | null | undefined;
+  const adLogin = getSessionUserId(session);
+
+  if (!adLogin) {
+    return null;
+  }
+
+  const userId = await findUserIdByAdLogin(adLogin);
+  if (!userId) {
+    return null;
+  }
+
+  return prisma.task.findMany({
+    where: { userId },
+    include: {
+      results: {
+        orderBy: {
+          id: 'desc',
+        },
+      },
+    },
+    orderBy: {
+      id: 'desc',
+    },
+  });
+}
+
+export async function getUserDetailHistory(data: Record<string, unknown>) {
+  const session = data.session as Session | null | undefined;
+  const adLogin = getSessionUserId(session);
+  if (!adLogin) {
+    return null;
+  }
+
+  const userId = await findUserIdByAdLogin(adLogin);
+  if (!userId) {
+    return null;
+  }
+
+  const taskId = parseTaskId(data.id);
+  if (!taskId) {
+    return null;
+  }
+
+  return prisma.task.findFirst({
+    where: { id: taskId, userId },
+    include: {
+      results: {
+        orderBy: {
+          id: 'desc',
+        },
+      },
     },
   });
 }

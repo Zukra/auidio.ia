@@ -35,7 +35,34 @@ export type AudioProcessResponse = ApiRecord;
 
 export type LaunchMode = 'single' | 'batch' | 'history';
 
-export type HistoryItem = Record<string, string>;
+export type HistoryResultItem = {
+  id: number;
+  taskId: number;
+  file: string;
+  result: string;
+  updatedAt: string;
+};
+
+export type HistoryTaskItem = {
+  id: number;
+  userId: number;
+  name: string;
+  taskType: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  errorMessage: string | null;
+  results: HistoryResultItem[];
+};
+
+export type HistoryItem = {
+  id: string;
+  requestId: string;
+  fileName: string;
+  processedAt: string;
+  taskType: TaskType;
+  result: string;
+};
 
 export type ExecutionState = {
   status: 'idle' | 'processing' | 'completed' | 'error';

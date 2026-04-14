@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { HistoryItem } from '@/types';
+import type { HistoryTaskItem } from '@/types';
 import { cn } from '@/lib/utils';
 
 type HistoryProps = {
@@ -17,8 +17,12 @@ function formatHistoryDate(value: string) {
   }).format(new Date(value));
 }
 
+function buildSelectionId(taskId: number, resultId: number): string {
+  return `${taskId}:${resultId}`;
+}
+
 export const History = ({ selectedHistoryItemId, onSelect }: HistoryProps) => {
-  const [items, setItems] = useState<HistoryItem[]>([]);
+  const [items, setItems] = useState<HistoryTaskItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -28,14 +32,17 @@ export const History = ({ selectedHistoryItemId, onSelect }: HistoryProps) => {
       setErrorMessage('');
 
       try {
-        const response = await fetch('/api/files/history', { method: 'POST' });
+        const response = await fetch('/api/workflows/history', { method: 'POST' });
 
         if (!response.ok) {
-          throw new Error('Не удалось загрузить историю');
+          setItems([]);
+          setErrorMessage('Не удалось загрузить историю');
+
+          return;
         }
 
-        const data = await response.json() as HistoryItem[];
-        setItems(data);
+        const data = await response.json() as HistoryTaskItem[] | null;
+        setItems(Array.isArray(data) ? data : []);
       } catch (error) {
         setItems([]);
         setErrorMessage(error instanceof Error ? error.message : 'Не удалось загрузить историю');
@@ -49,10 +56,8 @@ export const History = ({ selectedHistoryItemId, onSelect }: HistoryProps) => {
 
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white/80 dark:border-white/10 dark:bg-white/[0.03]">
-      <div className="grid grid-cols-[minmax(0,1.6fr)_minmax(140px,0.9fr)_minmax(160px,1fr)] gap-4 border-b border-slate-200/80 px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 dark:border-white/10 dark:text-zinc-500">
-        <span>Файл</span>
-        <span>Дата</span>
-        <span>Тип</span>
+      <div className="border-b border-slate-200/80 px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 dark:border-white/10 dark:text-zinc-500">
+        Запросы
       </div>
 
       {errorMessage && (
@@ -67,25 +72,42 @@ export const History = ({ selectedHistoryItemId, onSelect }: HistoryProps) => {
         </div>
       ) : (
         <div className="divide-y divide-slate-200/80 dark:divide-white/10">
-          {items.map((item) => {
-            const isSelected = item.id === selectedHistoryItemId;
+          {items.map((task) => (
+            <div key={task.id} className="px-4 py-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="truncate text-sm font-semibold text-slate-900 dark:text-zinc-100">{task.name}</p>
+                <p className="shrink-0 text-xs uppercase tracking-[0.08em] text-slate-500 dark:text-zinc-400">{task.taskType}</p>
+              </div>
 
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onSelect(item.id)}
-                className={cn(
-                  'grid w-full grid-cols-[minmax(0,1.6fr)_minmax(140px,0.9fr)_minmax(160px,1fr)] gap-4 px-4 py-4 text-left transition-colors hover:bg-slate-100/80 dark:hover:bg-white/[0.05]',
-                  isSelected && 'bg-blue-50/80 dark:bg-blue-500/10',
-                )}
-              >
-                <span className="truncate text-sm font-semibold text-slate-800 dark:text-zinc-100">{item.fileName}</span>
-                <span className="text-sm text-slate-500 dark:text-zinc-400">{formatHistoryDate(item.processedAt)}</span>
-                <span className="text-sm text-slate-600 dark:text-zinc-300">{item.taskType}</span>
-              </button>
-            );
-          })}
+              {task.results.length > 0 ? (
+                <div className="space-y-1">
+                  {task.results.map((result) => {
+                    const selectionId = buildSelectionId(task.id, result.id);
+                    const isSelected = selectionId === selectedHistoryItemId;
+
+                    return (
+                      <button
+                        key={result.id}
+                        type="button"
+                        onClick={() => onSelect(selectionId)}
+                        className={cn(
+                          'flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-3 py-2 text-left transition-colors hover:bg-slate-100/80 dark:hover:bg-white/[0.05]',
+                          isSelected && 'border-blue-200 bg-blue-50/80 dark:border-blue-500/30 dark:bg-blue-500/10',
+                        )}
+                      >
+                        <span className="truncate text-sm text-slate-800 dark:text-zinc-100">{result.file}</span>
+                        <span className="shrink-0 text-xs text-slate-500 dark:text-zinc-400">{formatHistoryDate(result.updatedAt)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-slate-200/80 px-3 py-2 text-sm text-slate-500 dark:border-white/10 dark:text-zinc-500">
+                  Для этой задачи пока нет сохраненных файлов.
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
 

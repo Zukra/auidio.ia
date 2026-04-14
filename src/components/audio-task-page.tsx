@@ -5,7 +5,7 @@ import { Header } from '@/components/header';
 import { FormPanel } from '@/components/form-panel';
 import { HistoryDetails } from '@/components/history-details';
 import { ResultWorkspace } from '@/components/result-workspace';
-import type { ApiRecord, ExecutionState, FormRunPayload, HistoryItem, LaunchMode, ProcessingStep } from '@/types';
+import type { ApiRecord, ExecutionState, FormRunPayload, LaunchMode, ProcessingStep } from '@/types';
 
 import './audio-task-page.module.css';
 
@@ -38,39 +38,12 @@ export function AudioTaskPage() {
   const [steps, setSteps] = useState<ProcessingStep[]>([]);
   const [execution, setExecution] = useState<ExecutionState>({ status: 'idle', response: null });
   const [launchMode, setLaunchMode] = useState<LaunchMode>('single');
-  const [historyDetailsErrorMessage, setHistoryDetailsErrorMessage] = useState('');
-  const [historyDetailsLoading, setHistoryDetailsLoading] = useState(false);
   const [selectedHistoryItemId, setSelectedHistoryItemId] = useState<string | null>(null);
-  const [selectedHistoryItem, setSelectedHistoryItem] = useState<HistoryItem | null>(null);
   const runIdRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const handleHistorySelect = useCallback(async (historyItemId: string) => {
+  const handleHistorySelect = useCallback((historyItemId: string) => {
     setSelectedHistoryItemId(historyItemId);
-    setSelectedHistoryItem(null);
-    setHistoryDetailsErrorMessage('');
-    setHistoryDetailsLoading(true);
-
-    try {
-      const response = await fetch('/api/files/history', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: historyItemId }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null) as { message?: string } | null;
-        throw new Error(errorData?.message ?? 'Не удалось загрузить результат записи');
-      }
-
-      const data = await response.json() as HistoryItem;
-      setSelectedHistoryItem(data);
-    } catch (error) {
-      setSelectedHistoryItem(null);
-      setHistoryDetailsErrorMessage(error instanceof Error ? error.message : 'Не удалось загрузить результат записи');
-    } finally {
-      setHistoryDetailsLoading(false);
-    }
   }, []);
 
   const handleRun = useCallback(async ({ payload, upload }: FormRunPayload) => {
@@ -87,7 +60,7 @@ export function AudioTaskPage() {
       const response = await fetch('/api/workflows/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...payload, ...{file: upload} }),
+        body: JSON.stringify({ ...payload, ...{ file: upload } }),
         signal: abortController.signal,
       });
 
@@ -241,15 +214,13 @@ export function AudioTaskPage() {
             onHistorySelect={handleHistorySelect}
           />
 
-          {launchMode === 'history' ? (
-            <HistoryDetails
-              historyItem={selectedHistoryItem}
-              isLoading={historyDetailsLoading}
-              errorMessage={historyDetailsErrorMessage}
-            />
-          ) : (
-            <ResultWorkspace execution={execution} steps={steps} />
-          )}
+          {launchMode === 'history'
+            ? (
+              <HistoryDetails selectedHistoryItemId={selectedHistoryItemId} />
+            )
+            : (
+              <ResultWorkspace execution={execution} steps={steps} />
+            )}
         </main>
       </div>
     </div>
