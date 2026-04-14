@@ -1,8 +1,7 @@
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { AudioProcessRequest, FormRunPayload, HistorySelection, HistoryTaskItem, LaunchMode } from '@/types';
+import { BatchFiles } from '@/components/batch-files';
 import { History } from '@/components/history';
 import { SingleFile } from '@/components/single-file';
 
@@ -58,35 +57,7 @@ export const FormPanel = ({
           </TabsContent>
 
           <TabsContent value={launchModes[1].value} className="mt-0 min-h-0 flex-1">
-            <div className="flex p-6">
-              <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-                <div>
-                  <h1 className="font-medium">Project ready!</h1>
-                  <p>You may now add components and start building.</p>
-                  <p>We&apos;ve already added the button component for you.</p>
-                  <Button className="mt-2">Button</Button>
-                </div>
-                <div className="font-mono text-xs text-muted-foreground">
-                  (Press <kbd>d</kbd> to toggle dark mode)
-                </div>
-
-                <Select>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a fruit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Fruits</SelectLabel>
-                      <SelectItem value="apple">Apple</SelectItem>
-                      <SelectItem value="banana">Banana</SelectItem>
-                      <SelectItem value="blueberry">Blueberry</SelectItem>
-                      <SelectItem value="grapes">Grapes</SelectItem>
-                      <SelectItem value="pineapple">Pineapple</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            <BatchFiles />
           </TabsContent>
 
           <TabsContent value={launchModes[2].value} className="mt-0 min-h-0 flex-1">

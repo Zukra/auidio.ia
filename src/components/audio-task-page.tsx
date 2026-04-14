@@ -210,8 +210,8 @@ export function AudioTaskPage() {
   }, [reloadHistory]);
 
   return (
-    <div className="h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.12),_transparent_34%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_52%,#f8fafc_100%)] text-slate-900 dark:bg-[radial-gradient(circle_at_top,_rgba(58,95,104,0.22),_transparent_30%),linear-gradient(180deg,rgba(9,12,19,1)_0%,rgba(14,16,26,1)_100%)] dark:text-foreground">
-      <div className="mx-auto flex h-full w-full max-w-[1440px] flex-col gap-2 px-4 py-4">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.12),_transparent_34%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_52%,#f8fafc_100%)] text-slate-900 dark:bg-[radial-gradient(circle_at_top,_rgba(58,95,104,0.22),_transparent_30%),linear-gradient(180deg,rgba(9,12,19,1)_0%,rgba(14,16,26,1)_100%)] dark:text-foreground">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1440px] flex-col gap-2 px-4 py-4">
 
         <Header />
 
