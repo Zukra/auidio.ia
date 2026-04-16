@@ -48,7 +48,7 @@ export const FormPanel = ({
             ))}
           </TabsList>
 
-          <TabsContent value={launchModes[0].value} forceMount className="mt-0 min-h-0 flex-1">
+          <TabsContent value={launchModes[0].value} forceMount className="mt-0 min-h-0 flex-1 data-[state=inactive]:hidden">
             <SingleFile
               onRun={onRun}
               isProcessing={isProcessing}
@@ -56,11 +56,11 @@ export const FormPanel = ({
             />
           </TabsContent>
 
-          <TabsContent value={launchModes[1].value} className="mt-0 min-h-0 flex-1">
+          <TabsContent value={launchModes[1].value} forceMount className="mt-0 min-h-0 flex-1 data-[state=inactive]:hidden">
             <BatchFiles />
           </TabsContent>
 
-          <TabsContent value={launchModes[2].value} className="mt-0 min-h-0 flex-1">
+          <TabsContent value={launchModes[2].value} forceMount className="mt-0 min-h-0 flex-1 data-[state=inactive]:hidden">
             <History
               items={historyItems}
               isLoading={isHistoryLoading}
