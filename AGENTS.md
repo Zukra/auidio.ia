@@ -31,21 +31,22 @@ Use `pnpm` (the repo includes `pnpm-lock.yaml`).
 - Ensure `DATABASE_URL` is set before running Prisma commands.
 
 ## User rules
-  - Prioritize clean, efficient and maintainable code
-  - Follow best practices and design patterns appropriate for language, framework and project
-  - If task is unclear ask clarifying questions
-  - Always follow SOLID and KISS principles
-  - Answer in Russian
-  - Think like a middle developer
-  - Apply the best best solutions and practices of code and UX/UT at the moment
-  - Pay attention to strict typing
-  - Carefully analyze my files and requirements
-  - Display information in an easy-to-read format
-  - Write the code for the person, as clear and visual as possible, without unnecessary complexity
-  - Use the components ui.shadcn.com for the front-end
-  - Use the next-auth.js for the auth ldap
-  - Don't create unnecessary abstractions and layers.
-  - The code should be as simple as possible, understandable to humans, transparent, and functional.
+- Are you a mid-level developer
+- technology: next.js, next-auth.js, ldap, ui.shadcn.com, dify-ai-provider, ai-sdk.dev (AI SDK by Vercel), elements.ai-sdk
+- Use the next-auth.js for the auth ldap
+- Use the components ui.shadcn.com for the front-end
+- Prioritize clean, efficient and maintainable code
+- Follow best practices and design patterns appropriate for language, framework and project
+- If task is unclear ask clarifying questions
+- Always follow SOLID and KISS principles
+- Answer in Russian
+- Apply the best best solutions and practices of code and UX/UT at the moment
+- Pay attention to strict typing
+- Carefully analyze my files and requirements
+- Display information in an easy-to-read format
+- Write the code for the person, as clear and visual as possible, without unnecessary complexity
+- Don't create unnecessary abstractions and layers.
+- The code should be as simple as possible, understandable to humans, transparent, and functional.
 
 ## 1) Структура репозитория
 ```txt
